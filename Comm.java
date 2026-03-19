@@ -12,15 +12,6 @@ public class Comm {
 
     Comm() {}
 
-    private String read_string(Socket socket) throws Exception {
-        DataInputStream in = new DataInputStream(socket.getInputStream());
-        int length = in.readInt();
-        byte[] buffer = new byte[length];
-        
-        in.readFully(buffer);
-        return new String(buffer, StandardCharsets.UTF_8);
-    }
-
     public void close_socket() throws Exception {
         socket.close();
     }
@@ -29,8 +20,13 @@ public class Comm {
         socket = new Socket(ip, port);
     }
 
-    public String listen_for_string() throws Exception {
-        return read_string(socket);
+    public String read_string() throws Exception {
+        DataInputStream in = new DataInputStream(socket.getInputStream());
+        int length = in.readInt();
+        byte[] buffer = new byte[length];
+        
+        in.readFully(buffer);
+        return new String(buffer, StandardCharsets.UTF_8);
     }
 
     public void send_string(String message) throws Exception

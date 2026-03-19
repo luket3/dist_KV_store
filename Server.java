@@ -38,7 +38,7 @@ public class Server implements Runnable {
     @Override
     public void run() {
         try {
-            String query = comm.listen_for_string();
+            String query = comm.read_string();
             System.out.println("Node:" + node_id + " executing query:" + query);
             send_response(execute_query(query));
         } 

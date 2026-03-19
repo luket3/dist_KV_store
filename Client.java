@@ -38,7 +38,7 @@ public class Client {
     }
 
     public String get_response() throws Exception{
-        String response = comm.listen_for_string();
+        String response = comm.read_string();
         comm.close_socket();
         return response;
     }
