@@ -4,30 +4,29 @@ import java.net.Socket;
 public class Server implements Runnable {
     private static HashMap<String,String> store = new HashMap<>();
 
-    private Socket socket;
-    private String response;
+    private String node_id;
+    private Comm comm;
 
-    Server(Socket socket, String response) {
-        this.socket = socket;
-        this.response = response;
+    Server(Socket socket, String node_id) {
+        this.node_id = node_id;
+        comm = new Comm(socket);
     }
 
-    private void send_response() throws Exception {
-        Comm comm = new Comm(socket);
+    private void send_response(String response) throws Exception {
         comm.send_string(response);
         comm.close_socket();
     }
 
-    public static String execute_query(String query) {
+    public String execute_query(String query) {
         String[] split = query.split(" ");
         String res;
 
         if (split.length == 2 && split[0].equals("Get"))
-            res = store.get(split[1]);
+            synchronized(store) {res = store.get(split[1]);}
         else if (split.length == 3 && split[0].equals("Put"))
-            res = store.put(split[1], split[2]);
+            synchronized(store) {res = store.put(split[1], split[2]);}
         else if (split.length == 2 && split[0].equals("Delete"))
-            res = store.remove(split[1]);
+            synchronized(store) {res = store.remove(split[1]);}
         else
             res = "null";
 
@@ -39,8 +38,11 @@ public class Server implements Runnable {
     @Override
     public void run() {
         try {
-            send_response();
-        } catch(Exception e) {
+            String query = comm.listen_for_string();
+            System.out.println("Node:" + node_id + " executing query:" + query);
+            send_response(execute_query(query));
+        } 
+        catch(Exception e) {
             System.err.println(e.getMessage());
         }
     }
