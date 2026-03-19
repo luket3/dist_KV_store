@@ -1,24 +1,24 @@
 
 public class Server_run_instance {
-    public static Comm_server comm;
+    public static Request_handler request_handler;
     public static String node_id;
     public static int port;
 
     public static void init(String args[]) {
-        comm = new Comm_server();
+        request_handler = new Request_handler();
         node_id = args[0];
         port = Integer.parseInt(args[1]);
     }
 
     public static void create_work() throws Exception {
-        Thread t = new Thread(new Server(comm.listen_for_connection(), node_id));
+        Thread t = new Thread(new Server(request_handler.listen_for_connection(), node_id));
         t.start();
     }
 
     public static void main(String[] args) throws Exception {
         Server_run_instance.init(args);
 
-        comm.create_socket(port);
+        request_handler.create_socket(port);
         while (true) {
             create_work();
         }
