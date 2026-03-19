@@ -3,17 +3,20 @@ import java.io.InputStreamReader;
 
 public class Client_run_instance {
     
-     public static void main(String[] args) throws Exception {
-        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
-        String query = br.readLine();
+   public static void main(String[] args) throws Exception {
+      Client client = new Client();
+      client.add_nodes();
+      BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
 
-        Client client = new Client();
-        client.add_nodes();
+      while(true) {
+         String query = br.readLine();
 
-        client.send_query(query);
-
-        String response = client.get_response();
-
-        System.out.println(response);
-     }
+         if (!client.send_query(query)) {
+            System.out.println("invalid query");
+            continue;
+         }
+         String response = client.get_response();
+         System.out.println(response);
+      }
+   }
 }

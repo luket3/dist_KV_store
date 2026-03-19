@@ -4,7 +4,7 @@ import java.nio.charset.StandardCharsets;
 
 public class Comm_virtual {
 
-    protected String read_string(Socket socket) throws Exception {
+    public String read_string(Socket socket) throws Exception {
         DataInputStream in = new DataInputStream(socket.getInputStream());
 
         int length = in.readInt();
@@ -17,6 +17,4 @@ public class Comm_virtual {
     public void create_socket() throws Exception {}
 
     public void close_socket() throws Exception {}
-
-    public String listen() throws Exception {return null;}
 }

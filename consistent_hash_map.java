@@ -1,6 +1,5 @@
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.TreeMap;
@@ -19,7 +18,7 @@ public class consistent_hash_map {
     // add all node n instances to hashmap
     //
     // @param Node n: node which will be added to hash map
-    public void add_node(Node n) throws NoSuchAlgorithmException {
+    public void add_node(Node n) throws Exception {
         for (int i = 0; i < virtual_nodes; i++)
             ring.put(Hash(n.id + i), n);
     }
@@ -27,7 +26,7 @@ public class consistent_hash_map {
     // remove all node n instances from hashmap
     //
     // @param String id: id of node to be removed from hash map
-    public void remove_node(String id) throws NoSuchAlgorithmException {
+    public void remove_node(String id) throws Exception {
         for (int i = 0; i < virtual_nodes; i++)
                 ring.remove(Hash(id + i));
     }
@@ -37,7 +36,7 @@ public class consistent_hash_map {
     // @param String key: key to be sharded
     // @param int n: number of nodes to be returned
     // @return Node[]: array of n nodes stored clockwise from Hash(key)
-    public Node[] get_n_nodes(int n, String key) throws NoSuchAlgorithmException {
+    public Node[] get_n_nodes(int n, String key) throws Exception {
         if (ring.size() < n*virtual_nodes)
             return null;
         
@@ -67,20 +66,15 @@ public class consistent_hash_map {
     //
     // @param String s: string to be hashed
     // @return long: MD5 hash of s
-    public long Hash(String s) throws NoSuchAlgorithmException {
+    public long Hash(String s) throws Exception {
         long hash = 0;
-        try {
-            MessageDigest md = MessageDigest.getInstance("MD5");
-            md.update(s.getBytes(StandardCharsets.UTF_8));
-            byte[] digest = md.digest();
+        MessageDigest md = MessageDigest.getInstance("MD5");
 
-            for (int i = 0; i < 8; i++)
-                hash = (hash << 8) | (long) ((digest[i] & 0xff));
-        } catch (NoSuchAlgorithmException e) {
-            System.err.println("failed to hash " + s);
-            throw e;
-        }
+        md.update(s.getBytes(StandardCharsets.UTF_8));
+        byte[] digest = md.digest();
 
+        for (int i = 0; i < 8; i++)
+            hash = (hash << 8) | (long) ((digest[i] & 0xff));
         return hash;
     }
 }

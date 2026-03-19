@@ -1,3 +1,4 @@
+import java.net.Socket;
 
 public class Server_run_instance {
     public static Comm_server comm;
@@ -11,9 +12,12 @@ public class Server_run_instance {
     }
 
     public static void create_work() throws Exception {
-        String query = comm.listen();
+        Socket socket = comm.listen_for_connection();
+        String query = comm.read_string(socket);
+
+        System.out.println("Node:" + node_id + " executing query:" + query);
         String response = Server.execute_query(query);
-        Thread t = new Thread(new Server(comm.remote_ip, comm.remote_port, response));
+        Thread t = new Thread(new Server(socket, response));
         t.start();
     }
 

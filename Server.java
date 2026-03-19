@@ -1,37 +1,38 @@
 import java.util.HashMap;
+import java.net.Socket;
 
 public class Server implements Runnable {
-    private static HashMap<String,String> store;
+    private static HashMap<String,String> store = new HashMap<>();
 
-    private String query_ip;
-    private int query_port;
+    private Socket socket;
     private String response;
 
-    Server(String query_ip, int query_port, String response) {
-        this.query_ip = query_ip;
-        this.query_port = query_port;
+    Server(Socket socket, String response) {
+        this.socket = socket;
         this.response = response;
     }
 
     private void send_response() throws Exception {
-        Comm comm = new Comm();
-        comm.create_socket(query_ip, query_port);
+        Comm comm = new Comm(socket);
         comm.send_string(response);
         comm.close_socket();
     }
 
     public static String execute_query(String query) {
         String[] split = query.split(" ");
-        String res = "True";
+        String res;
 
-        if (split[0].equals("Get")) {
+        if (split.length == 2 && split[0].equals("Get"))
             res = store.get(split[1]);
-        } else if (split[0].equals("Put")) {
-            store.put(split[1], split[2]);
-        } else if (split[0].equals("Delete")) {
-            store.remove(split[1]);
-        }
+        else if (split.length == 3 && split[0].equals("Put"))
+            res = store.put(split[1], split[2]);
+        else if (split.length == 2 && split[0].equals("Delete"))
+            res = store.remove(split[1]);
+        else
+            res = "null";
 
+        if (res == null)
+            res = "null";
         return res;
     }
 
@@ -40,7 +41,7 @@ public class Server implements Runnable {
         try {
             send_response();
         } catch(Exception e) {
-            System.err.println("failed to send response");
+            System.err.println(e.getMessage());
         }
     }
 }
