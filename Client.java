@@ -7,7 +7,7 @@ public class Client {
     private Comm comm;
 
 
-    Client() {
+    Client() throws Exception {
         comm = new Comm();
         map = new consistent_hash_map();
     }
@@ -19,7 +19,15 @@ public class Client {
         for (String line : file_data) {
             String[] split = line.split(",");
             map.add_node(new Node(split[0], split[1], Integer.parseInt(split[2])));
+            map.print();
         }
+
+        map.remove_node("N8");
+        map.print();
+        map.remove_node("N7");
+        map.print();
+        map.remove_node("N3");
+        map.print();
     }
 
     public boolean send_query(String query) throws Exception {
@@ -27,9 +35,10 @@ public class Client {
 
         if ((split.length == 2 && (split[0].equals("Get") || split[0].equals("Delete"))) ||
         (split.length == 3 && split[0].equals("Put"))) {
-            Node[] n = map.get_n_nodes(1,split[1]);
-            comm.create_socket(n[0].ip, n[0].port);
-            comm.send_string(query);
+            Shard n = map.get_shard(split[1]);
+            
+            //comm.create_socket(n[0].ip, n[0].port);
+            //comm.send_string(query);
         }
         else {
             return false;

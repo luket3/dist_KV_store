@@ -8,6 +8,7 @@ public class Client_run_instance {
       client.add_nodes();
       BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
 
+      /*
       while(true) {
          String query = br.readLine();
 
@@ -18,5 +19,6 @@ public class Client_run_instance {
          String response = client.get_response();
          System.out.println(response);
       }
+         */
    }
 }

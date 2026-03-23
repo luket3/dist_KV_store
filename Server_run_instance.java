@@ -1,8 +1,11 @@
 
 public class Server_run_instance {
     public static Request_handler request_handler;
+    public static consistent_hash_map nodes;
     public static String node_id;
     public static int port;
+
+
 
     public static void init(String args[]) {
         request_handler = new Request_handler();
