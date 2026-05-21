@@ -1,0 +1,29 @@
+/**
+ * Represents a single entry in the Raft log.
+ *
+ * <p>Each entry contains the original command string, the leader term when the
+ * entry was created, and the log index.</p>
+ */
+public class log_entry {
+    /** The command associated with this log entry. */
+    final String command;
+
+    /** Raft term when this entry was created. */
+    final int term;
+
+    /** Log index for this entry. */
+    final int index;
+
+    /**
+     * Create a new log entry.
+     *
+     * @param command the command string
+     * @param term the term number
+     * @param index the index in the log
+     */
+    log_entry(String command, int term, int index) {
+        this.command =  command;
+        this.term = term;
+        this.index = index;
+    }
+}

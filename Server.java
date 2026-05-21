@@ -1,22 +1,50 @@
 import java.util.HashMap;
 import java.net.Socket;
 
+/**
+ * Per-connection server worker that executes simple key-value queries.
+ *
+ * <p>Supported queries: {@code Get key}, {@code Put key value},
+ * and {@code Delete key}.</p>
+ */
 public class Server implements Runnable {
+    /** Shared in-memory key-value store. */
     private static HashMap<String,String> store = new HashMap<>();
 
+    /** Identifier of the node servicing this request. */
     private String node_id;
+
+    /** Communication helper wrapping the accepted socket. */
     private Comm comm;
 
+    /**
+     * Create a new worker for the given connection and node id.
+     *
+     * @param socket accepted client socket
+     * @param node_id id of the node handling the request
+     */
     Server(Socket socket, String node_id) {
         this.node_id = node_id;
         comm = new Comm(socket);
     }
 
+    /**
+     * Send a response string back to the requester and close the socket.
+     *
+     * @param response string to send
+     * @throws Exception on communication errors
+     */
     private void send_response(String response) throws Exception {
         comm.send_string(response);
         comm.close_socket();
     }
 
+    /**
+     * Execute a simple key-value query against the shared store.
+     *
+     * @param query textual query to execute
+     * @return result string or "null" when no value exists / invalid query
+     */
     public String execute_query(String query) {
         String[] split = query.split(" ");
         String res;

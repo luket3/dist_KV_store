@@ -2,17 +2,40 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.List;
 
+/**
+ * Client for the distributed key-value store.
+ *
+ * <p>This class is responsible for loading the cluster configuration into a
+ * consistent-hash map, sending queries to the shard responsible for a key,
+ * and receiving responses from servers via the {@code Comm} helper.</p>
+ */
 public class Client {
-    private consistent_hash_map map; // map used to shard keys
+    /** Map used to determine which shard holds a given key. */
+    private consistent_hash_map map;
+
+    /** Communication helper used to send/receive messages to nodes. */
     private Comm comm;
 
-
+    /**
+     * Create a new {@code Client} instance and initialize communication and
+     * the consistent-hash map.
+     *
+     * @throws Exception if initialization of underlying components fails
+     */
     Client() throws Exception {
         comm = new Comm();
         map = new consistent_hash_map();
     }
 
-    // adds nodes to consistent hash map
+    /**
+     * Read the cluster configuration from `network.config` and add each
+     * defined node to the consistent-hash map.
+     *
+     * <p>The configuration file is expected to contain one node per line in
+     * the format: {@code nodeId,ip,port}.</p>
+     *
+     * @throws Exception if the configuration file cannot be read or parsed
+     */
     public void add_nodes() throws Exception {
         List<String> file_data = Files.readAllLines(Paths.get("network.config"));
 
@@ -30,6 +53,23 @@ public class Client {
         map.print();
     }
 
+    /**
+     * Validate and send a textual query to the shard responsible for the
+     * provided key.
+     *
+     * <p>Supported query formats are:
+     * <ul>
+     *   <li>{@code Get key}</li>
+     *   <li>{@code Delete key}</li>
+     *   <li>{@code Put key value}</li>
+     * </ul>
+     * </p>
+     *
+     * @param query the query string to send
+     * @return {@code true} if the query format is valid (and the send would be
+     * attempted), {@code false} for invalid formats
+     * @throws Exception on communication errors while attempting to send
+     */
     public boolean send_query(String query) throws Exception {
         String[] split = query.split(" ");
 
@@ -46,6 +86,13 @@ public class Client {
         return true;
     }
 
+    /**
+     * Read a response string from the currently-open communication socket
+     * and close the socket afterwards.
+     *
+     * @return the response string read from the server
+     * @throws Exception on I/O or communication errors
+     */
     public String get_response() throws Exception{
         String response = comm.read_string();
         comm.close_socket();
