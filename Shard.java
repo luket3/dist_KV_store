@@ -1,3 +1,11 @@
+/*
+ * File: Shard.java
+ * Project: Distributed KV Store
+ * Author: luket
+ * Date: 2026-05-22
+ * Description: Represents a shard (subset) of nodes stored on the consistent hash ring.
+ */
+
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -17,6 +25,7 @@ public class Shard {
 
     public String id;
     public int length;
+    public Node leader;
 
     /**
      * Internal constructor used when creating a split shard with an initial
@@ -38,6 +47,7 @@ public class Shard {
 
         this.left = new LinkedList<>();
         this.right = new LinkedList<>();
+        this.leader = null;
     }
 
     /**
@@ -105,5 +115,13 @@ public class Shard {
     /** Return nodes currently stored on the right side of the shard. */
     public List<Node> get_right() {
         return right;
+    }
+
+    /** Return the first node in the left list, or null if empty. */
+    public Node get() {
+        if (left.isEmpty()) {
+            return null;
+        }
+        return left.getFirst();
     }
 }

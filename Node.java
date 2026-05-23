@@ -1,3 +1,10 @@
+/*
+ * File: Node.java
+ * Project: Distributed KV Store
+ * Author: luket
+ * Date: 2026-05-22
+ * Description: Lightweight representation of a cluster node.
+ */
 
 /**
  * Lightweight representation of a cluster node.

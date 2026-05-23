@@ -1,9 +1,9 @@
 /*
- * File: Raft.java
+ * File: RaftNode.java
  * Project: Distributed KV Store
  * Author: luket
  * Date: 2026-05-22
- * Description: Partial Raft role implementation for handling incoming RPCs.
+ * Description: Raft node implementation holding core Raft state.
  */
 
 import java.net.Socket;
@@ -11,32 +11,36 @@ import java.util.LinkedList;
 import java.util.List;
 
 /**
- * Partial Raft role implementation for handling incoming RPCs.
- *
- * <p>This class models a node's Raft role (follower/candidate/leader) and
- * provides an entry point for processing messages received on a socket.</p>
+ * Represents a Raft node, storing its role, log, communication channel,
+ * and knowledge of the cluster.
  */
-public class Raft {
+public class RaftNode {
     /** Current role type: "follower", "candidate", or "leader". */
     public String type;
 
     /** In-memory Raft log. */
-    LinkedList<log_entry> log;
+    public LinkedList<log_entry> log;
+    public LinkedList<log_entry> uncommitted_log;
 
     /** Communication helper used for the RPC transport. */
-    Comm comm;
+    public Comm comm;
 
     /** Cluster nodes known to this Raft instance. */
-    List<Node> nodes;
+    public Shard shard;
+
+    
 
     /**
-     * Create a Raft instance bound to a given port (not yet listening).
+     * Create a RaftNode instance bound to a given port (not yet listening).
      *
-     * @param port local port the Raft instance will use (reserved for future use)
+     * @param shard the shard to which this Raft node belongs
      * @throws Exception on initialization errors
      */
-    Raft(int port) throws Exception {
+    public RaftNode(Shard shard) throws Exception {
         this.type = "follower";
+        this.log = new LinkedList<>();
+        this.shard = shard;
+        // comm will be initialized when a socket is available via start(Socket)
     }
 
     /**
@@ -46,7 +50,7 @@ public class Raft {
      * @return the last committed command in the log (placeholder behaviour)
      */
     public String start(Socket socket) {
-        comm = new Comm(socket);
+        this.comm = new Comm(socket);
 
         // create something to tell if message is from leader in comm
 

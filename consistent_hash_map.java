@@ -1,3 +1,11 @@
+/*
+ * File: consistent_hash_map.java
+ * Project: Distributed KV Store
+ * Author: luket
+ * Date: 2026-05-22
+ * Description: Simple consistent-hash implementation that maps keys to Shard instances.
+ */
+
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.SortedMap;
@@ -101,7 +109,7 @@ public class consistent_hash_map {
     public Shard get_shard(String key) throws Exception {
         if (ring.size() < 1)
             return null;
-        
+
         SortedMap<Long, Shard> tailMap = ring.tailMap(Hash(key));
         if (tailMap.size() >= 1)
             return tailMap.firstEntry().getValue();

@@ -1,3 +1,11 @@
+/*
+ * File: log_entry.java
+ * Project: Distributed KV Store
+ * Author: luket
+ * Date: 2026-05-22
+ * Description: Represents a single entry in the Raft log.
+ */
+
 /**
  * Represents a single entry in the Raft log.
  *

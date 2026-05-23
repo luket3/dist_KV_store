@@ -1,3 +1,11 @@
+/*
+ * File: Client.java
+ * Project: Distributed KV Store
+ * Author: luket
+ * Date: 2026-05-22
+ * Description: Client for the distributed key-value store.
+ */
+
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.List;
@@ -76,7 +84,7 @@ public class Client {
         if ((split.length == 2 && (split[0].equals("Get") || split[0].equals("Delete"))) ||
         (split.length == 3 && split[0].equals("Put"))) {
             Shard n = map.get_shard(split[1]);
-            
+
             //comm.create_socket(n[0].ip, n[0].port);
             //comm.send_string(query);
         }

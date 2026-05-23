@@ -1,3 +1,10 @@
+/*
+ * File: Server_run_instance.java
+ * Project: Distributed KV Store
+ * Author: luket
+ * Date: 2026-05-22
+ * Description: Server runner program that initializes listening sockets and spawns a Server worker thread for each incoming connection.
+ */
 
 /**
  * Server runner program that initializes listening sockets and spawns a

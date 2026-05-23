@@ -1,3 +1,11 @@
+/*
+ * File: Server.java
+ * Project: Distributed KV Store
+ * Author: luket
+ * Date: 2026-05-22
+ * Description: Per-connection server worker that executes simple key-value queries.
+ */
+
 import java.util.HashMap;
 import java.net.Socket;
 
@@ -69,7 +77,7 @@ public class Server implements Runnable {
             String query = comm.read_string();
             System.out.println("Node:" + node_id + " executing query:" + query);
             send_response(execute_query(query));
-        } 
+        }
         catch(Exception e) {
             System.err.println(e.getMessage());
         }

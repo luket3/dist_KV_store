@@ -1,3 +1,11 @@
+/*
+ * File: Request_handler.java
+ * Project: Distributed KV Store
+ * Author: luket
+ * Date: 2026-05-22
+ * Description: Simple blocking request handler that wraps a ServerSocket.
+ */
+
 import java.net.ServerSocket;
 import java.net.Socket;
 
@@ -33,7 +41,7 @@ public class Request_handler {
      * @throws Exception on accept failures
      */
     public Socket listen_for_connection() throws Exception {
-        Socket socket = server_socket.accept();            
+        Socket socket = server_socket.accept();
         return socket;
     }
 }

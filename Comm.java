@@ -1,3 +1,11 @@
+/*
+ * File: Comm.java
+ * Project: Distributed KV Store
+ * Author: luket
+ * Date: 2026-05-22
+ * Description: Lightweight communication helper for reading and writing length-prefixed UTF-8 strings over a TCP Socket.
+ */
+
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.net.Socket;
@@ -53,7 +61,7 @@ public class Comm {
         DataInputStream in = new DataInputStream(socket.getInputStream());
         int length = in.readInt();
         byte[] buffer = new byte[length];
-        
+
         in.readFully(buffer);
         return new String(buffer, StandardCharsets.UTF_8);
     }
