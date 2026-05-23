@@ -3,7 +3,8 @@
  * Project: Distributed KV Store
  * Author: luket
  * Date: 2026-05-22
- * Description: Simple consistent-hash implementation that maps keys to Shard instances.
+ * Description: Simple consistent-hash implementation that maps keys to
+ * Shard instances.
  */
 
 import java.nio.charset.StandardCharsets;
@@ -27,7 +28,8 @@ public class consistent_hash_map {
     private final TreeMap<Long, Shard> ring; // ring containing node metadata
 
     /** Number of virtual shard replicas per real shard on the ring. */
-    private final int virtual_shards = 3; // number of instances of each real node in ring
+    private final int virtual_shards = 3;
+    // number of instances of each real node in ring
 
     /** Minimum desirable shard size before rebalancing occurs. */
     private final int min_shard_size = 3;
@@ -137,7 +139,8 @@ public class consistent_hash_map {
     }
 
     /**
-     * Print a human-readable representation of the ring and its shards to stdout.
+     * Print a human-readable representation of the ring and its shards to
+     * stdout.
      */
     public void print() {
         for (Map.Entry<Long, Shard> e : ring.entrySet()) {

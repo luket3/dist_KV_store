@@ -3,8 +3,9 @@
  * Project: Distributed KV Store
  * Author: luket
  * Date: 2026-05-22
- * Description: Lightweight communication helper for reading and writing length-prefixed UTF-8 strings over a TCP Socket.
- */
+ * Description: Lightweight communication helper for reading and writing
+ * length-prefixed UTF-8 strings over a TCP Socket.
+ * */
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -28,7 +29,10 @@ public class Comm {
         this.socket = socket;
     }
 
-    /** Create an uninitialized {@code Comm}; call {@link #create_socket} to connect. */
+    /**
+     * Create an uninitialized {@code Comm}; call {@link #create_socket} to
+     * connect.
+     */
     Comm() {}
 
     /**

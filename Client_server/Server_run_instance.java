@@ -3,7 +3,8 @@
  * Project: Distributed KV Store
  * Author: luket
  * Date: 2026-05-22
- * Description: Server runner program that initializes listening sockets and spawns a Server worker thread for each incoming connection.
+ * Description: Server runner program that initializes listening sockets
+ * and spawns a Server worker thread for each incoming connection.
  */
 
 /**
@@ -34,7 +35,12 @@ public class Server_run_instance {
      * @throws Exception on socket accept or thread creation errors
      */
     public static void create_work() throws Exception {
-        Thread t = new Thread(new Server(request_handler.listen_for_connection(), node_id));
+        Thread t = new Thread(
+            new Server(
+                request_handler.listen_for_connection(),
+                node_id
+            )
+        );
         t.start();
     }
 

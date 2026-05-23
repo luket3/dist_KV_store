@@ -36,8 +36,9 @@ public class Client {
     }
 
     /**
-     * Read the cluster configuration from `network.config` and add each
-     * defined node to the consistent-hash map.
+     * Read the cluster configuration from `network.config`, add each
+     * defined node to the consistent-hash map, and perform sample node removals
+     * to exercise shard rebalancing.
      *
      * <p>The configuration file is expected to contain one node per line in
      * the format: {@code nodeId,ip,port}.</p>
@@ -45,11 +46,18 @@ public class Client {
      * @throws Exception if the configuration file cannot be read or parsed
      */
     public void add_nodes() throws Exception {
-        List<String> file_data = Files.readAllLines(Paths.get("network.config"));
+        List<String> file_data =
+            Files.readAllLines(Paths.get("network.config"));
 
         for (String line : file_data) {
             String[] split = line.split(",");
-            map.add_node(new Node(split[0], split[1], Integer.parseInt(split[2])));
+            map.add_node(
+                new Node(
+                    split[0],
+                    split[1],
+                    Integer.parseInt(split[2])
+                )
+            );
             map.print();
         }
 
@@ -81,8 +89,11 @@ public class Client {
     public boolean send_query(String query) throws Exception {
         String[] split = query.split(" ");
 
-        if ((split.length == 2 && (split[0].equals("Get") || split[0].equals("Delete"))) ||
-        (split.length == 3 && split[0].equals("Put"))) {
+        if (
+            (split.length == 2
+             && (split[0].equals("Get") || split[0].equals("Delete")))
+            || (split.length == 3 && split[0].equals("Put"))
+        ) {
             Shard n = map.get_shard(split[1]);
 
             //comm.create_socket(n[0].ip, n[0].port);

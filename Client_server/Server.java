@@ -3,7 +3,8 @@
  * Project: Distributed KV Store
  * Author: luket
  * Date: 2026-05-22
- * Description: Per-connection server worker that executes simple key-value queries.
+ * Description: Per-connection server worker that executes simple
+ * key-value queries.
  */
 
 import java.util.HashMap;

@@ -3,7 +3,8 @@
  * Project: Distributed KV Store
  * Author: luket
  * Date: 2026-05-22
- * Description: Simple runner that creates a Client instance and initializes the client-side view of the cluster.
+ * Description: Simple runner that creates a Client instance and
+ * initializes the client-side view of the cluster.
  */
 
 import java.io.BufferedReader;
@@ -11,7 +12,8 @@ import java.io.InputStreamReader;
 
 /**
  * Simple runner that creates a {@code Client} instance and initializes the
- * client-side view of the cluster.
+ * client-side view of the cluster. The interactive console loop is present
+ * but currently commented out.
  */
 public class Client_run_instance {
     /**

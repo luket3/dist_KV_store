@@ -3,7 +3,8 @@
  * Project: Distributed KV Store
  * Author: luket
  * Date: 2026-05-22
- * Description: Represents a shard (subset) of nodes stored on the consistent hash ring.
+ * Description: Represents a shard (subset) of nodes stored on the
+ * consistent hash ring.
  */
 
 import java.util.Iterator;
@@ -95,7 +96,8 @@ public class Shard {
      * containing the right list.
      *
      * @param new_id id for the newly created shard
-     * @return the newly created {@link Shard}, or {@code null} if splitting is not applicable
+    * @return the newly created {@link Shard}, or {@code null} if splitting
+    * is not applicable
      */
     public Shard split(String new_id) {
         if (length != min_shard_size*2)
