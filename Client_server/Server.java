@@ -7,9 +7,7 @@
  * and spawns a Server worker thread for each incoming connection.
  */
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
@@ -22,7 +20,6 @@ public class Server {
     public static consistent_hash_map nodes;
     public static String node_id;
     public static int port;
-    public static Map<String, Node> node_map;
     public static Pipe raft_in;
     public static Pipe state_machine_in;
     public static int return_code;
@@ -33,29 +30,28 @@ public class Server {
      *
      * @param args expected to contain {@code node_id} and {@code port}
      */
-    public static void init(String args[]) {
+    public static void init(String args[]) throws Exception {
         request_handler = new Request_handler();
         node_id = args[0];
         port = Integer.parseInt(args[1]);
         return_code = 0;
-
-        node_map = new HashMap<>();
+        nodes = new consistent_hash_map();
 
         try {
-        List<String> file_data =
-            Files.readAllLines(Paths.get("network.config"));
+            List<String> file_data =
+                Files.readAllLines(Paths.get("network.config"));
 
             for (String line : file_data) {
-            String[] split = line.split(",");
-            node_map.put(split[0], new Node(
-                split[0],
-                split[1],
-                Integer.parseInt(split[2])
-                )
-            );
-        }
-        }
-        catch (Exception e) {
+                String[] split = line.split(",");
+                nodes.add_node(new Node(
+                        split[0],
+                        split[1],
+                        Integer.parseInt(split[2])
+                ));
+
+                //nodes.print();
+            }
+        } catch (Exception e) {
             System.out.println("Error reading network configuration: " + e);
             System.exit(1);
         }
@@ -65,7 +61,8 @@ public class Server {
     }
 
     /**
-     * Accept a connection and parse it to raft via the pipe.
+     * Accept a connection, determine if it's a Raft or client request,
+     * and route it appropriately via the pipes.
      *
      * @throws Exception on socket accept or thread creation errors
      */
@@ -75,7 +72,8 @@ public class Server {
         String request = comm.read_string();
 
         String message_type = request.substring(0, request.indexOf(" "));
-        if (!message_type.equals("AppendEntries") && !message_type.equals("RequestVote") && !message_type.equals("ClientCommand")) {
+        if (!message_type.equals("AppendEntries") && !message_type.equals("RequestVote")
+                && !message_type.equals("ClientCommand")) {
             request = Integer.toString(return_code) + " " + request;
 
             state_machine_in.put(new message_info(Integer.toString(return_code) + " Reply", comm));
@@ -95,13 +93,17 @@ public class Server {
         Server.init(args);
 
         // start Raft instance in separate thread to handle cluster communication
-        Thread raft = new Thread(new Raft(raft_in, state_machine_in, node_map, node_id));
+        Thread raft = new Thread(new Raft(
+                raft_in,
+                state_machine_in,
+                nodes.get_shard_w_node(node_id).get_all_nodes(),
+                node_id
+        ));
         raft.start();
 
         // start state machine instance in separate thread to handle client queries
         Thread state_machine = new Thread(new State_machine(state_machine_in, node_id));
         state_machine.start();
-
 
         /*
          * Main server loop: listen for incoming connections and pass to Raft

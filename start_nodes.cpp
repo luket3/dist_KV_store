@@ -19,9 +19,9 @@ using namespace std;
  * Reads the network configuration file and creates a command line for each node.
  *
  * @return Vector of command strings, each suitable for launching a server instance.
- *         Each command has the form: "java Server_run_instance <nodeId> <port>"
+ *         Each command has the form: "java Server <nodeId> <port>"
  */
-vector<string> create_commands() implements runable {
+vector<string> create_commands() {
     ifstream file("network.config");
     vector<string> commands;
     string line;

@@ -87,7 +87,7 @@ public class consistent_hash_map {
     }
 
     /**
-     * Remove a node from the ring by id.
+     * Remove a node from the ring by id and redistribute any leftover nodes.
      *
      * @param id identifier of the node to remove
      * @throws Exception on errors during shard merging or modification
@@ -101,7 +101,7 @@ public class consistent_hash_map {
     }
 
     /**
-     * Return the shard responsible for the supplied key.
+     * Return the shard responsible for the supplied key using consistent hashing.
      *
      * @param key the key to look up
      * @return the {@link Shard} responsible for {@code key}, or {@code null}
@@ -117,6 +117,20 @@ public class consistent_hash_map {
             return tailMap.firstEntry().getValue();
         else
             return ring.firstEntry().getValue();
+    }
+
+    /**
+     * Find the shard that contains the specified node id.
+     *
+     * @param id the node id to search for
+     * @return the shard containing the node, or null if not found
+     */
+    public Shard get_shard_w_node(String id) {
+        for (Shard shard : ring.values())
+            if (shard.contains(id))
+                return shard;
+
+        return null;
     }
 
     /**

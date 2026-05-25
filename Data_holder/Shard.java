@@ -10,6 +10,7 @@
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.HashMap;
 
 /**
  * Represents a shard (subset) of nodes stored on the consistent hash ring.
@@ -125,5 +126,38 @@ public class Shard {
             return null;
         }
         return left.getFirst();
+    }
+
+    /**
+     * Check if this shard contains a node with the given id.
+     *
+     * @param id the node id to check for
+     * @return true if the shard contains a node with the given id, false otherwise
+     */
+    public Boolean contains(String id) {
+        for (Node n : left)
+            if (n.id.equals(id))
+                return true;
+        for (Node n : right)
+            if (n.id.equals(id))
+                return true;
+
+        return false;
+    }
+
+    /**
+     * Get all nodes in this shard as a map from node id to node.
+     *
+     * @return a map containing all nodes in this shard
+     */
+    public HashMap<String, Node> get_all_nodes() {
+        HashMap<String, Node> all_nodes = new HashMap<>();
+        for (Node n : left) {
+            all_nodes.put(n.id, n);
+        }
+        for (Node n : right) {
+            all_nodes.put(n.id, n);
+        }
+        return all_nodes;
     }
 }
