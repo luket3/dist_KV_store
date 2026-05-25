@@ -14,19 +14,25 @@ import java.util.Map;
  * <p>This class models a node's Raft role (follower/candidate/leader) and
  * provides an entry point for processing messages received via a pipe.</p>
  */
-public class Raft {
+public class Raft implements Runnable {
     RaftNode node;
-    Pipe message_pipe;
-    private int ELECTION_TIMEOUT_MS = 3000; // 3 seconds election timeout
-    private long electionStartTime;
+    Pipe in_pipe;
+    Pipe out_pipe;
+    private int TIMEOUT_MS = 3000; // 3 seconds election timeout
+    private long last_heartbeat_time = -1;
+    private int HEARTBEAT_INTERVAL_MS = 3000; // 1 second heartbeat interval
+    String node_id;
 
     public Raft(
-        Pipe message_pipe,
+        Pipe in_pipe,
+        Pipe out_pipe,
         Map<String, Node> cluster_nodes,
         String node_id
     ) {
-        node = new RaftNode(cluster_nodes, node_id);
-        this.message_pipe = message_pipe;
+        node = new RaftNode(cluster_nodes, node_id, out_pipe);
+        this.in_pipe = in_pipe;
+        this.out_pipe = out_pipe;
+        this.node_id = node_id;
     }
 
     /**
@@ -34,25 +40,26 @@ public class Raft {
      * timeouts. If no message is received within the election timeout the
      * node becomes a candidate and an election is started.
      */
-    public void start() {
+    @Override
+    public void run() {
         while (true) {
             try {
                 // Try to listen for a message with a timeout
                 if (node.get_role().equals("leader")) {
                     // Leaders send heartbeats more frequently
-                    ELECTION_TIMEOUT_MS = 1000;
+                    TIMEOUT_MS = last_heartbeat_time == -1 ? HEARTBEAT_INTERVAL_MS : (int) (HEARTBEAT_INTERVAL_MS - (System.currentTimeMillis() - last_heartbeat_time));
                 } else {
                     // Randomize election timeout between 2 and 5 seconds for
                     // followers and candidates
-                    ELECTION_TIMEOUT_MS = (int) (Math.random() * 3000) + 2000;
+                    TIMEOUT_MS = (int) (Math.random() * 5000) + 5000;
                 }
-                String rawMessage = message_pipe.take(ELECTION_TIMEOUT_MS);
+                String rawMessage = in_pipe.take(TIMEOUT_MS);
 
                 // If we get a message (not null), process it
                 if (rawMessage != null) {
-                    System.out.println("Received a message: " + rawMessage);
+                    System.out.println("Node " + node_id + " received a message: " + rawMessage);
                     // Process the message through the Raft node
-                    String response = node.Handle_message(rawMessage);
+                    node.Handle_message(rawMessage);
                 } else {
                     // Timeout occurred: no message received within the
                     // election timeout
@@ -60,7 +67,7 @@ public class Raft {
                     if (node.get_role().equals("follower")
                         || node.get_role().equals("candidate")) {
                         // Follower or candidate timeout: start election
-                        System.out.println("Election timeout elapsed. starting"
+                        System.out.println("Node " + node_id + " - Election timeout elapsed. starting"
                                            + " election.");
                         node.start_election();
                     }
@@ -68,9 +75,10 @@ public class Raft {
                     // send heartbeats
                 }
 
-                if (node.get_role().equals("leader")) {
+                if (node.get_role().equals("leader") && (last_heartbeat_time == -1 || System.currentTimeMillis() - last_heartbeat_time >= HEARTBEAT_INTERVAL_MS)) {
                     // If we're the leader, send heartbeats periodically
-                    System.out.println("Leader sending heartbeats.");
+                    System.out.println("Node " + node_id + " - Leader sending heartbeats.");
+                    last_heartbeat_time = System.currentTimeMillis();
                     node.send_heartbeat();
                 }
             } catch (InterruptedException e) {

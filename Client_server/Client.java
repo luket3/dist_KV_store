@@ -58,15 +58,8 @@ public class Client {
                     Integer.parseInt(split[2])
                 )
             );
-            map.print();
         }
 
-        map.remove_node("N8");
-        map.print();
-        map.remove_node("N7");
-        map.print();
-        map.remove_node("N3");
-        map.print();
     }
 
     /**
@@ -94,10 +87,10 @@ public class Client {
              && (split[0].equals("Get") || split[0].equals("Delete")))
             || (split.length == 3 && split[0].equals("Put"))
         ) {
-            Shard n = map.get_shard(split[1]);
+            Node n = map.get_shard(split[1]).get();
 
-            //comm.create_socket(n[0].ip, n[0].port);
-            //comm.send_string(query);
+            comm.create_socket(n.ip, n.port);
+            comm.send_string(query);
         }
         else {
             return false;

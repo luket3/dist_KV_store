@@ -10,12 +10,12 @@ import java.util.LinkedList;
 import java.util.Queue;
 
 /**
- * Thread-safe pipe for passing {@link String} messages between threads.
+ * Thread-safe pipe for passing {@link message_info} messages between threads.
  * Implements an unbounded buffer with blocking take operations and
  * timeout support.
  */
 public class Pipe {
-    private final Queue<String> queue;
+    private final Queue<message_info> queue;
 
     /**
      * Creates an unbounded pipe.
@@ -31,6 +31,11 @@ public class Pipe {
      * @param message the message to put into the pipe
      */
     public synchronized void put(String message) {
+        queue.add(new message_info(message));
+        notifyAll(); // Notify threads waiting to take
+    }
+
+    public synchronized void put(message_info message) {
         queue.add(message);
         notifyAll(); // Notify threads waiting to take
     }
@@ -45,7 +50,7 @@ public class Pipe {
     * @throws InterruptedException if the current thread is interrupted while
     *                              waiting
      */
-    public synchronized String take(
+    public synchronized message_info take_all(
         long timeoutMillis
     ) throws InterruptedException {
         long startTime = System.currentTimeMillis();
@@ -65,10 +70,24 @@ public class Pipe {
             }
         }
 
-        String message = queue.poll();
+        message_info msg = queue.poll();
         // Notify threads waiting to put (though not needed for unbounded)
         notifyAll();
-        return message;
+        return msg;
+    }
+
+    public synchronized message_info take_all() throws InterruptedException {
+        return take_all(0); // 0 means wait indefinitely
+    }
+
+    public synchronized String take(
+        long timeoutMillis
+    ) throws InterruptedException {
+        message_info msg = take_all(timeoutMillis);
+        if (msg == null) {
+            return null;
+        }
+        return msg.message;
     }
 
     /**

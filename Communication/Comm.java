@@ -85,4 +85,36 @@ public class Comm {
         out.write(payload);
         out.flush();
     }
+
+    public String get_host_ip() {
+        if (socket == null) {
+            return null;
+        }
+
+        return socket.getInetAddress().getHostAddress();
+    }
+
+    public int get_host_port() {
+        if (socket == null) {
+            return -1;
+        }
+
+        return socket.getPort();
+    }
+
+    public String get_lcl_ip() {
+        if (socket == null) {
+            return null;
+        }
+
+        return socket.getLocalAddress().getHostAddress();
+    }
+
+    public int get_lcl_port() {
+        if (socket == null) {
+            return -1;
+        }
+
+        return socket.getLocalPort();
+    }
 }

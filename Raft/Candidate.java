@@ -3,7 +3,7 @@
  */
 public class Candidate extends Role {
 
-    public int votes_received;
+    private int votes_received;
 
     public Candidate() {
         super();
@@ -34,5 +34,22 @@ public class Candidate extends Role {
             Role.type = "leader";
         }
         return true;
+    }
+
+    public void start_election() {
+        // Increment term and transition this node into candidate state.
+        Role.term++;
+        Role.type = "candidate";
+        // Vote for self as the current candidate.
+        Role.voted_for = Role.id;
+        // In a real implementation this would be the node's own identifier
+        this.votes_received = 1; // Vote for self
+
+        // Broadcast RequestVote RPCs to the other cluster nodes.
+        broadcast("RequestVote " + 
+               Role.term + " " + 
+               Role.id + " " + 
+               Role.log.get_last_idx() + " " + 
+               Role.log.get_last_term());
     }
 }

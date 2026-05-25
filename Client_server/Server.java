@@ -1,86 +1,114 @@
 /*
- * File: Server.java
+ * File: Server_run_instance.java
  * Project: Distributed KV Store
  * Author: luket
  * Date: 2026-05-22
- * Description: Per-connection server worker that executes simple
- * key-value queries.
+ * Description: Server runner program that initializes listening sockets
+ * and spawns a Server worker thread for each incoming connection.
  */
 
 import java.util.HashMap;
-import java.net.Socket;
+import java.util.List;
+import java.util.Map;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
 /**
- * Per-connection server worker that executes simple key-value queries.
- *
- * <p>Supported queries: {@code Get key}, {@code Put key value},
- * and {@code Delete key}.</p>
+ * Server runner program that initializes listening sockets and spawns a
+ * {@link State_machine} worker thread for each incoming connection.
  */
-public class Server implements Runnable {
-    /** Shared in-memory key-value store. */
-    private static HashMap<String,String> store = new HashMap<>();
+public class Server {
+    public static Request_handler request_handler;
+    public static consistent_hash_map nodes;
+    public static String node_id;
+    public static int port;
+    public static Map<String, Node> node_map;
+    public static Pipe raft_in;
+    public static Pipe state_machine_in;
+    public static int return_code;
 
-    /** Identifier of the node servicing this request. */
-    private String node_id;
-
-    /** Communication helper wrapping the accepted socket. */
-    private Comm comm;
-
-    /**
-     * Create a new worker for the given connection and node id.
-     *
-     * @param socket accepted client socket
-     * @param node_id id of the node handling the request
-     */
-    Server(Socket socket, String node_id) {
-        this.node_id = node_id;
-        comm = new Comm(socket);
-    }
 
     /**
-     * Send a response string back to the requester and close the socket.
+     * Initialize static runner state from command-line arguments.
      *
-     * @param response string to send
-     * @throws Exception on communication errors
+     * @param args expected to contain {@code node_id} and {@code port}
      */
-    private void send_response(String response) throws Exception {
-        comm.send_string(response);
-        comm.close_socket();
-    }
+    public static void init(String args[]) {
+        request_handler = new Request_handler();
+        node_id = args[0];
+        port = Integer.parseInt(args[1]);
+        return_code = 0;
 
-    /**
-     * Execute a simple key-value query against the shared store.
-     *
-     * @param query textual query to execute
-     * @return result string or "null" when no value exists / invalid query
-     */
-    public String execute_query(String query) {
-        String[] split = query.split(" ");
-        String res;
+        node_map = new HashMap<>();
 
-        if (split.length == 2 && split[0].equals("Get"))
-            synchronized(store) {res = store.get(split[1]);}
-        else if (split.length == 3 && split[0].equals("Put"))
-            synchronized(store) {res = store.put(split[1], split[2]);}
-        else if (split.length == 2 && split[0].equals("Delete"))
-            synchronized(store) {res = store.remove(split[1]);}
-        else
-            res = "null";
-
-        if (res == null)
-            res = "null";
-        return res;
-    }
-
-    @Override
-    public void run() {
         try {
-            String query = comm.read_string();
-            System.out.println("Node:" + node_id + " executing query:" + query);
-            send_response(execute_query(query));
+        List<String> file_data =
+            Files.readAllLines(Paths.get("network.config"));
+
+            for (String line : file_data) {
+            String[] split = line.split(",");
+            node_map.put(split[0], new Node(
+                split[0],
+                split[1],
+                Integer.parseInt(split[2])
+                )
+            );
         }
-        catch(Exception e) {
-            System.err.println(e.getMessage());
+        }
+        catch (Exception e) {
+            System.out.println("Error reading network configuration: " + e);
+            System.exit(1);
+        }
+
+        raft_in = new Pipe();
+        state_machine_in = new Pipe();
+    }
+
+    /**
+     * Accept a connection and parse it to raft via the pipe.
+     *
+     * @throws Exception on socket accept or thread creation errors
+     */
+    public static void hand_off() throws Exception {
+
+        Comm comm = new Comm(request_handler.listen_for_connection());
+        String request = comm.read_string();
+
+        String message_type = request.substring(0, request.indexOf(" "));
+        if (!message_type.equals("AppendEntries") && !message_type.equals("RequestVote") && !message_type.equals("ClientCommand")) {
+            request = Integer.toString(return_code) + " " + request;
+
+            state_machine_in.put(new message_info(Integer.toString(return_code) + " Reply", comm));
+            return_code += 1;
+        }
+
+        raft_in.put(request);
+    }
+
+    /**
+     * Main entry point for the server process.
+     *
+     * @param args command-line arguments: {@code node_id} {@code port}
+     * @throws Exception on initialization or runtime socket errors
+     */
+    public static void main(String[] args) throws Exception {
+        Server.init(args);
+
+        // start Raft instance in separate thread to handle cluster communication
+        Thread raft = new Thread(new Raft(raft_in, state_machine_in, node_map, node_id));
+        raft.start();
+
+        // start state machine instance in separate thread to handle client queries
+        Thread state_machine = new Thread(new State_machine(state_machine_in, node_id));
+        state_machine.start();
+
+
+        /*
+         * Main server loop: listen for incoming connections and pass to Raft
+         */
+        request_handler.create_socket(port);
+        while (true) {
+            hand_off();
         }
     }
 }

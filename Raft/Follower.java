@@ -39,12 +39,8 @@ public class Follower extends Role {
         }
         
         // Check if candidate's log is at least as up-to-date as receiver's log
-        int receiverLastLogIndex = Role.log.isEmpty()
-            ? -1
-            : Role.log.size() - 1;
-        int receiverLastLogTerm = Role.log.isEmpty()
-            ? -1
-            : Role.log.get(Role.log.size() - 1).term;
+        int receiverLastLogIndex = Role.log.get_last_idx();
+        int receiverLastLogTerm = Role.log.get_last_term();
 
         boolean sameTerm = (lastLogTerm == receiverLastLogTerm);
         boolean logUpToDate = (lastLogTerm > receiverLastLogTerm)
@@ -57,6 +53,7 @@ public class Follower extends Role {
         );
         if (voteGranted) {
             Role.voted_for = candidateId;
+            Role.term = candidateTerm; // Update term to candidate's term
         }
 
         // Send vote grant status back to the candidate
@@ -94,12 +91,21 @@ public class Follower extends Role {
             Role.term = leaderTerm;
             Role.type = "follower";
             Role.voted_for = null;
+        } else if (leaderTerm < Role.term) {
+            // Reject if leader's term is less than current term
+            return false;
+        }
+
+        if (Role.leader == null || !Role.leader.id.equals(leaderId)) {
+            // Update leader information if this is a new leader
+            Role.leader = Role.nodes.get(leaderId);
+            Role.log.clear_uncommitted();
         }
 
         // Check prevLogIndex and prevLogTerm match
         boolean logMatch = true;
         if (prevLogIndex >= 0) {
-            if (prevLogIndex >= Role.log.size()) {
+            if (prevLogIndex >= Role.log.get_size()) {
                 logMatch = false;
             } else if (Role.log.get(prevLogIndex).term != prevLogTerm) {
                 logMatch = false;
@@ -112,16 +118,35 @@ public class Follower extends Role {
         }
 
         // Append new entries from message_parts[6] onwards
+        String command = "";
         for (int i = 6; i < message_parts.length; i++) {
-            Role.log.add(new log_entry(message_parts[i], Role.term, Role.log.size()));
+            if ((message_parts[i].equals("ClientCommand") && !command.isEmpty())) {
+                Role.log.append_entry(command.trim(), Role.term);
+                command = "";
+            } else {
+                command += message_parts[i] + " ";
+            }
+
+            if (i == message_parts.length - 1 && !command.isEmpty()) {
+                Role.log.append_entry(command.trim(), Role.term);
+            }
         }
 
         // Update commitIndex
-        if (leaderCommit > Role.commit_index) {
-            Role.commit_index = Math.min(leaderCommit, Role.log.size() - 1);
-        }
+        Role.log.commit_entries(leaderCommit);
 
-        Role.leader = Role.nodes.get(leaderId); // Store leader reference
+        send_to_node(
+            Role.leader,
+            "AppendEntries " + Role.term + " true " + Role.log.get_last_idx()
+        );
         return true;
+    }
+
+    public void hand_to_leader(String message) {
+        if (Role.leader != null) {
+            send_to_node(Role.leader, "ClientCommand " + message);
+        } else {
+            // No known leader, could buffer the message or ignore
+        }
     }
 }

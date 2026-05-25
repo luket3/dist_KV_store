@@ -21,7 +21,7 @@ using namespace std;
  * @return Vector of command strings, each suitable for launching a server instance.
  *         Each command has the form: "java Server_run_instance <nodeId> <port>"
  */
-vector<string> create_commands() {
+vector<string> create_commands() implements runable {
     ifstream file("network.config");
     vector<string> commands;
     string line;
@@ -30,7 +30,7 @@ vector<string> create_commands() {
         // Parse CSV line: nodeId,ip,port
         stringstream ss(line);
         string token;
-        string command = "java Server_run_instance";
+        string command = "java Server";
 
         int i = 0;
         while (getline(ss, token, ',') && i < 3) {
