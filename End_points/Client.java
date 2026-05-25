@@ -13,7 +13,7 @@ import java.io.InputStreamReader;
  * Simple runner that creates a {@code Client} instance and initializes the
  * client-side view of the cluster.
  */
-public class Client_run_instance {
+public class Client {
     /**
      * Program entry point. Initializes a {@code Client}, loads nodes from
      * configuration, and opens a console reader for interactive queries.
@@ -22,7 +22,7 @@ public class Client_run_instance {
      * @throws Exception if initialization fails
      */
    public static void main(String[] args) throws Exception {
-      Client client = new Client();
+      Client_imp client = new Client_imp();
       client.add_nodes();
       BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
 

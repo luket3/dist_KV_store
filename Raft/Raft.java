@@ -15,7 +15,7 @@ import java.util.Map;
  * provides an entry point for processing messages received via a pipe.</p>
  */
 public class Raft implements Runnable {
-    RaftNode node;
+    Raft_node node;
     Pipe in_pipe;
     Pipe out_pipe;
     private int TIMEOUT_MS = 3000; // 3 seconds election timeout
@@ -29,7 +29,7 @@ public class Raft implements Runnable {
         Map<String, Node> cluster_nodes,
         String node_id
     ) {
-        node = new RaftNode(cluster_nodes, node_id, out_pipe);
+        node = new Raft_node(cluster_nodes, node_id, out_pipe);
         this.in_pipe = in_pipe;
         this.out_pipe = out_pipe;
         this.node_id = node_id;

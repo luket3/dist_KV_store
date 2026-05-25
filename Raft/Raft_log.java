@@ -1,8 +1,8 @@
 import java.util.LinkedList;
 
 public class Raft_log {
-    private LinkedList<log_entry> committed_log;
-    private LinkedList<log_entry> uncommitted_log;
+    private LinkedList<Log_entry> committed_log;
+    private LinkedList<Log_entry> uncommitted_log;
     private Pipe state_machine_in;
 
     private String remove_first_if(String command, String term) {
@@ -25,14 +25,14 @@ public class Raft_log {
     public void append_entry(String command, int term) {
         System.out.println("node " + Role.id + " appending entry to log: " + command + " (term " + term + ")");
         String command_str = remove_first_if(command, "ClientCommand");
-        log_entry new_entry = new log_entry(command_str, term, committed_log.size() + uncommitted_log.size());
+        Log_entry new_entry = new Log_entry(command_str, term, committed_log.size() + uncommitted_log.size());
         uncommitted_log.add(new_entry);
     }
 
     public void commit_entries(int up_to_index) {
         System.out.println("node " + Role.id + " committing entries up to index " + up_to_index);
         while (!uncommitted_log.isEmpty() && uncommitted_log.getFirst().index <= up_to_index) {
-            log_entry entry_to_commit = uncommitted_log.removeFirst();
+            Log_entry entry_to_commit = uncommitted_log.removeFirst();
             committed_log.add(entry_to_commit);
             state_machine_in.put(entry_to_commit.command);
         }
@@ -69,7 +69,7 @@ public class Raft_log {
         return committed_log.size() + uncommitted_log.size();
     }
 
-    public log_entry get(int index) {
+    public Log_entry get(int index) {
         if (index < committed_log.size()) {
             return committed_log.get(index);
         } else {

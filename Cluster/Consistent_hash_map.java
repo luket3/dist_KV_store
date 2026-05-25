@@ -22,7 +22,7 @@ import java.util.Map;
  * ring (controlled by {@code virtual_shards}). The structure automatically
  * splits and merges shards based on the configured {@code min_shard_size}.</p>
  */
-public class consistent_hash_map {
+public class Consistent_hash_map {
 
     /** Ring mapping 64-bit hash values to shard metadata. */
     private final TreeMap<Long, Shard> ring; // ring containing node metadata
@@ -67,7 +67,7 @@ public class consistent_hash_map {
     /**
      * Create an empty consistent-hash ring and allocate the initial shard.
      */
-    public consistent_hash_map() throws Exception {
+    public Consistent_hash_map() throws Exception {
         ring = new TreeMap<>();
         add_shard(null);
     }

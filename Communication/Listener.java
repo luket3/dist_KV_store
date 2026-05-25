@@ -13,7 +13,7 @@ import java.net.SocketTimeoutException;
 /**
  * Simple blocking request handler that wraps a {@link ServerSocket}.
  */
-public class Request_handler {
+public class Listener {
     private ServerSocket server_socket;
 
     /**

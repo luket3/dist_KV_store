@@ -51,7 +51,7 @@ public class State_machine implements Runnable {
      * @param query textual query to execute
      * @return result string or "null" when no value exists / invalid query
      */
-    public String parse_query(message_info query) {
+    public String parse_query(Message_info query) {
         String[] split = query.message.split(" ");
         String res;
         
@@ -82,7 +82,7 @@ public class State_machine implements Runnable {
 
         while (true) {
             try {
-                message_info query = in_pipe.take_all();
+                Message_info query = in_pipe.take_all();
                 System.out.println("Node:" + node_id + " recieved command:" + query.message);
 
                 String response = parse_query(query);

@@ -12,7 +12,7 @@
  * <p>Each entry contains the original command string, the leader term when the
  * entry was created, and the log index.</p>
  */
-public class log_entry {
+public class Log_entry {
     /** The command associated with this log entry. */
     final String command;
 
@@ -29,7 +29,7 @@ public class log_entry {
      * @param term the term number
      * @param index the index in the log
      */
-    log_entry(String command, int term, int index) {
+    Log_entry(String command, int term, int index) {
         this.command =  command;
         this.term = term;
         this.index = index;

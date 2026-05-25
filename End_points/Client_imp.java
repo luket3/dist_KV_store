@@ -17,9 +17,9 @@ import java.util.List;
  * consistent-hash map, sending queries to the shard responsible for a key,
  * and receiving responses from servers via the {@code Comm} helper.</p>
  */
-public class Client {
+public class Client_imp {
     /** Map used to determine which shard holds a given key. */
-    private consistent_hash_map map;
+    private Consistent_hash_map map;
 
     /** Communication helper used to send/receive messages to nodes. */
     private Comm comm;
@@ -30,9 +30,9 @@ public class Client {
      *
      * @throws Exception if initialization of underlying components fails
      */
-    Client() throws Exception {
+    Client_imp() throws Exception {
         comm = new Comm();
-        map = new consistent_hash_map();
+        map = new Consistent_hash_map();
     }
 
     /**

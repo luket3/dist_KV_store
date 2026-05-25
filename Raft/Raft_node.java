@@ -3,7 +3,7 @@ import java.util.Map;
 /**
  * Base class for Raft implementations holding common state.
  */
-public class RaftNode {
+public class Raft_node {
     /** Current role type: "follower", "candidate", or "leader". */
     private Candidate candidate_role;
     private Follower follower_role;
@@ -12,7 +12,7 @@ public class RaftNode {
     /**
      * Constructor initializes common Raft state.
      */
-    public RaftNode(Map<String, Node> cluster_nodes, String id, Pipe state_machine_in) {
+    public Raft_node(Map<String, Node> cluster_nodes, String id, Pipe state_machine_in) {
         // Initialize shared state in Role base class
         Role.initializeState(cluster_nodes, id, state_machine_in);
 

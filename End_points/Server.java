@@ -16,8 +16,8 @@ import java.nio.file.Paths;
  * {@link State_machine} worker thread for each incoming connection.
  */
 public class Server {
-    public static Request_handler request_handler;
-    public static consistent_hash_map nodes;
+    public static Listener listener;
+    public static Consistent_hash_map nodes;
     public static String node_id;
     public static int port;
     public static Pipe raft_in;
@@ -31,11 +31,11 @@ public class Server {
      * @param args expected to contain {@code node_id} and {@code port}
      */
     public static void init(String args[]) throws Exception {
-        request_handler = new Request_handler();
+        listener = new Listener();
         node_id = args[0];
         port = Integer.parseInt(args[1]);
         return_code = 0;
-        nodes = new consistent_hash_map();
+        nodes = new Consistent_hash_map();
 
         try {
             List<String> file_data =
@@ -68,7 +68,7 @@ public class Server {
      */
     public static void hand_off() throws Exception {
 
-        Comm comm = new Comm(request_handler.listen_for_connection());
+        Comm comm = new Comm(listener.listen_for_connection());
         String request = comm.read_string();
 
         String message_type = request.substring(0, request.indexOf(" "));
@@ -76,7 +76,7 @@ public class Server {
                 && !message_type.equals("ClientCommand")) {
             request = Integer.toString(return_code) + " " + request;
 
-            state_machine_in.put(new message_info(Integer.toString(return_code) + " Reply", comm));
+            state_machine_in.put(new Message_info(Integer.toString(return_code) + " Reply", comm));
             return_code += 1;
         }
 
@@ -108,7 +108,7 @@ public class Server {
         /*
          * Main server loop: listen for incoming connections and pass to Raft
          */
-        request_handler.create_socket(port);
+        listener.create_socket(port);
         while (true) {
             hand_off();
         }
