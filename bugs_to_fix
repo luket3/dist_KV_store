@@ -9,3 +9,15 @@ test network partitions
 test change of leader
 
 change heartbeat timer so it's less complex
+
+leader dosne't update match_index for itself
+
+Leader role state is not reinitialized on leader transition
+
+heartbeat timeout interval
+
+candidate does not step down on AppendEntries with equal term
+
+needs better msg parsing in split_msg
+
+make it ArrayList in Raft_log
