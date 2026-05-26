@@ -83,7 +83,9 @@ public class State_machine implements Runnable {
         while (true) {
             try {
                 Message_info query = in_pipe.take_all();
-                System.out.println("Node:" + node_id + " recieved command:" + query.message);
+                String logMessage = "Node:" + node_id + " recieved command:"
+                        + query.message;
+                System.out.println(logMessage);
 
                 String response = parse_query(query);
 

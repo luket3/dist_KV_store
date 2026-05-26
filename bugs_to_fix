@@ -1,0 +1,11 @@
+during election a node should only be able to be voted for by a node 1 time
+
+a vote from a previous term should be disregarded
+
+check how next_index is updated when a node becomes a new leader, make sure it works even when leader changes
+
+test network partitions
+
+test change of leader
+
+change heartbeat timer so it's less complex

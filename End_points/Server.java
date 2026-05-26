@@ -72,12 +72,18 @@ public class Server {
         String request = comm.read_string();
 
         String message_type = request.substring(0, request.indexOf(" "));
-        if (!message_type.equals("AppendEntries") && !message_type.equals("RequestVote")
-                && !message_type.equals("ClientCommand")) {
-            request = Integer.toString(return_code) + " " + request;
+        if (!message_type.equals("AppendEntries")
+                && !message_type.equals("RequestVote")
+                && !message_type.equals("ClientCommand")
+                && !message_type.equals("AppendEntriesReply")
+                && !message_type.equals("RequestVoteReply")) {
+            request = "ClientCommand " + Integer.toString(return_code) + " " + request;
 
-            state_machine_in.put(new Message_info(Integer.toString(return_code) + " Reply", comm));
+            Message_info reply = new Message_info(
+                    Integer.toString(return_code) + " Reply", comm);
+            state_machine_in.put(reply);
             return_code += 1;
+
         }
 
         raft_in.put(request);
@@ -92,7 +98,8 @@ public class Server {
     public static void main(String[] args) throws Exception {
         Server.init(args);
 
-        // start Raft instance in separate thread to handle cluster communication
+        // start Raft instance in separate thread to handle
+        // cluster communication
         Thread raft = new Thread(new Raft(
                 raft_in,
                 state_machine_in,
@@ -101,8 +108,10 @@ public class Server {
         ));
         raft.start();
 
-        // start state machine instance in separate thread to handle client queries
-        Thread state_machine = new Thread(new State_machine(state_machine_in, node_id));
+        // start state machine instance in separate thread to handle
+        // client queries
+        Thread state_machine = new Thread(
+                new State_machine(state_machine_in, node_id));
         state_machine.start();
 
         /*

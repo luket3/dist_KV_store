@@ -132,7 +132,8 @@ public class Shard {
      * Check if this shard contains a node with the given id.
      *
      * @param id the node id to check for
-     * @return true if the shard contains a node with the given id, false otherwise
+     * @return true if the shard contains a node with the given id,
+     *         false otherwise
      */
     public Boolean contains(String id) {
         for (Node n : left)

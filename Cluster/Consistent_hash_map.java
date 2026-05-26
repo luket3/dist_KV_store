@@ -101,7 +101,8 @@ public class Consistent_hash_map {
     }
 
     /**
-     * Return the shard responsible for the supplied key using consistent hashing.
+     * Return the shard responsible for the supplied key using consistent
+     * hashing.
      *
      * @param key the key to look up
      * @return the {@link Shard} responsible for {@code key}, or {@code null}

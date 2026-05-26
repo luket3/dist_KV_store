@@ -11,8 +11,9 @@ import java.util.Map;
 /**
  * Partial Raft role implementation for handling incoming RPCs.
  *
- * <p>This class models a node's Raft role (follower/candidate/leader) and
- * provides an entry point for processing messages received via a pipe.</p>
+ * <p>This class models a node's Raft role
+ * (follower/candidate/leader) and provides an entry point for processing
+ * messages received via a pipe.</p>
  */
 public class Raft implements Runnable {
     Raft_node node;
@@ -47,7 +48,13 @@ public class Raft implements Runnable {
                 // Try to listen for a message with a timeout
                 if (node.get_role().equals("leader")) {
                     // Leaders send heartbeats more frequently
-                    TIMEOUT_MS = last_heartbeat_time == -1 ? HEARTBEAT_INTERVAL_MS : (int) (HEARTBEAT_INTERVAL_MS - (System.currentTimeMillis() - last_heartbeat_time));
+                    if (last_heartbeat_time == -1) {
+                        TIMEOUT_MS = HEARTBEAT_INTERVAL_MS;
+                    } else {
+                        TIMEOUT_MS = (int) (HEARTBEAT_INTERVAL_MS
+                                - (System.currentTimeMillis()
+                                        - last_heartbeat_time));
+                    }
                 } else {
                     // Randomize election timeout between 2 and 5 seconds for
                     // followers and candidates
@@ -57,7 +64,8 @@ public class Raft implements Runnable {
 
                 // If we get a message (not null), process it
                 if (rawMessage != null) {
-                    System.out.println("Node " + node_id + " received a message: " + rawMessage);
+                    System.out.println("Node " + node_id
+                            + " received a message: " + rawMessage);
                     // Process the message through the Raft node
                     node.Handle_message(rawMessage);
                 } else {
@@ -67,17 +75,23 @@ public class Raft implements Runnable {
                     if (node.get_role().equals("follower")
                         || node.get_role().equals("candidate")) {
                         // Follower or candidate timeout: start election
-                        System.out.println("Node " + node_id + " - Election timeout elapsed. starting"
-                                           + " election.");
+                        System.out.println("Node " + node_id
+                                + " - Election timeout elapsed. starting"
+                                + " election.");
                         node.start_election();
                     }
                     // Leaders do not timeout the same way because they
                     // send heartbeats
                 }
 
-                if (node.get_role().equals("leader") && (last_heartbeat_time == -1 || System.currentTimeMillis() - last_heartbeat_time >= HEARTBEAT_INTERVAL_MS)) {
+                if (node.get_role().equals("leader")
+                        && (last_heartbeat_time == -1
+                                || System.currentTimeMillis()
+                                        - last_heartbeat_time
+                                                >= HEARTBEAT_INTERVAL_MS)) {
                     // If we're the leader, send heartbeats periodically
-                    System.out.println("Node " + node_id + " - Leader sending heartbeats.");
+                    System.out.println("Node " + node_id
+                            + " - Leader sending heartbeats.");
                     last_heartbeat_time = System.currentTimeMillis();
                     node.send_heartbeat();
                 }

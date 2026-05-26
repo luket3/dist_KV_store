@@ -1,4 +1,5 @@
 import java.util.LinkedList;
+import java.util.ArrayList;
 
 public class Raft_log {
     private LinkedList<Log_entry> committed_log;
@@ -23,15 +24,18 @@ public class Raft_log {
     }
 
     public void append_entry(String command, int term) {
-        System.out.println("node " + Role.id + " appending entry to log: " + command + " (term " + term + ")");
         String command_str = remove_first_if(command, "ClientCommand");
-        Log_entry new_entry = new Log_entry(command_str, term, committed_log.size() + uncommitted_log.size());
+        Log_entry new_entry = new Log_entry(
+                command_str,
+                term,
+                committed_log.size() + uncommitted_log.size()
+        );
         uncommitted_log.add(new_entry);
     }
 
     public void commit_entries(int up_to_index) {
-        System.out.println("node " + Role.id + " committing entries up to index " + up_to_index);
-        while (!uncommitted_log.isEmpty() && uncommitted_log.getFirst().index <= up_to_index) {
+        while (!uncommitted_log.isEmpty()
+                && uncommitted_log.getFirst().index <= up_to_index) {
             Log_entry entry_to_commit = uncommitted_log.removeFirst();
             committed_log.add(entry_to_commit);
             state_machine_in.put(entry_to_commit.command);
@@ -79,6 +83,66 @@ public class Raft_log {
             }
         }
         return null; // Index out of bounds
+    }
+
+    public void clear_to(int max) {
+        if (max == -1) {
+            clear_uncommitted();
+            return;
+        }
+
+        if (max < committed_log.size() - 1)
+            return;
+
+        uncommitted_log.subList(max - committed_log.size() + 1,
+                                uncommitted_log.size()).clear();
+    }
+
+    public String get_as_string(int start, int end) {
+        ArrayList<Log_entry> entries = get(start, end);
+
+        if (entries == null)
+            return "";
+
+        String as_string = "[";
+        for (int i = 0; i < entries.size(); i++) {
+            as_string += entries.get(i).command;
+            if (i < entries.size() - 1)
+                as_string += ",";
+        }
+        as_string += "]";
+
+        return as_string;
+    }
+
+    public ArrayList<Log_entry> get(int start, int end) {
+        // Validate
+        if (start < 0 || end >= get_size() || end < start)
+            return null;
+
+        ArrayList<Log_entry> result = new ArrayList<>();
+
+        int committedSize = committed_log.size();
+
+        // entirely in committed log
+        if (end < committedSize) {
+            result.addAll(committed_log.subList(start, end + 1));
+            return result;
+        }
+
+        // entirely in uncommitted log
+        if (start >= committedSize) {
+            int s = start - committedSize;
+            int e = end - committedSize;
+            result.addAll(uncommitted_log.subList(s, e + 1));
+            return result;
+        }
+
+        // Case 3: Spans committed → uncommitted
+        result.addAll(committed_log.subList(start, committedSize));
+        result.addAll(uncommitted_log.subList(0, end - committedSize + 1));
+
+        return result;
     }
 
     public void clear_uncommitted() {
