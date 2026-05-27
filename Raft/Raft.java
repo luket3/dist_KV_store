@@ -19,10 +19,12 @@ public class Raft implements Runnable {
     Raft_node node;
     Pipe in_pipe;
     Pipe out_pipe;
-    private int TIMEOUT_MS = 3000; // 3 seconds election timeout
     private long last_heartbeat_time = -1;
-    private int HEARTBEAT_INTERVAL_MS = 3000; // 1 second heartbeat interval
+    private static final int HEARTBEAT_INTERVAL_MS = 1000; // 1 second heartbeat interval
+    private static final int ELECTION_TIMEOUT_MIN_MS = 2000; // 2 seconds
+    private static final int ELECTION_TIMEOUT_MAX_MS = 5000; // 5 seconds
     String node_id;
+    boolean alive;
 
     public Raft(
         Pipe in_pipe,
@@ -34,6 +36,23 @@ public class Raft implements Runnable {
         this.in_pipe = in_pipe;
         this.out_pipe = out_pipe;
         this.node_id = node_id;
+        this.alive = true;
+    }
+
+    public boolean check_kill_msg(String msg) {
+        if (msg == null)
+            return false;
+
+        String message_type = msg.split(" ")[0];
+        if (message_type.equals("Kill")) {
+            alive = false;
+            return true;
+        }
+        else if (message_type.equals("Revive")) {
+            alive = true;
+            return true;
+        }
+        return false;
     }
 
     /**
@@ -45,22 +64,34 @@ public class Raft implements Runnable {
     public void run() {
         while (true) {
             try {
-                // Try to listen for a message with a timeout
-                if (node.get_role().equals("leader")) {
-                    // Leaders send heartbeats more frequently
-                    if (last_heartbeat_time == -1) {
-                        TIMEOUT_MS = HEARTBEAT_INTERVAL_MS;
-                    } else {
-                        TIMEOUT_MS = (int) (HEARTBEAT_INTERVAL_MS
-                                - (System.currentTimeMillis()
-                                        - last_heartbeat_time));
+                long timeoutMs;
+                long now = System.currentTimeMillis();
+
+                if (node.get_role().equals("leader") && alive) {
+                    // Leaders send heartbeats on a fixed interval.
+                    if (last_heartbeat_time == -1
+                            || now - last_heartbeat_time >= HEARTBEAT_INTERVAL_MS) {
+                        System.out.println("Node " + node_id
+                                + " - Leader sending heartbeats.");
+                        last_heartbeat_time = now;
+                        node.send_heartbeat();
                     }
+                    timeoutMs = HEARTBEAT_INTERVAL_MS;
                 } else {
                     // Randomize election timeout between 2 and 5 seconds for
-                    // followers and candidates
-                    TIMEOUT_MS = (int) (Math.random() * 5000) + 5000;
+                    // followers and candidates.
+                    timeoutMs = ELECTION_TIMEOUT_MIN_MS
+                            + (int) (Math.random()
+                                    * (ELECTION_TIMEOUT_MAX_MS
+                                            - ELECTION_TIMEOUT_MIN_MS));
                 }
-                String rawMessage = in_pipe.take(TIMEOUT_MS);
+
+                String rawMessage = in_pipe.take(Math.max(1, timeoutMs));
+                
+                if (check_kill_msg(rawMessage) || !alive) {
+                    System.out.println("message failed to be delivered to node: " + this.node_id);
+                    continue;
+                }
 
                 // If we get a message (not null), process it
                 if (rawMessage != null) {
@@ -84,17 +115,6 @@ public class Raft implements Runnable {
                     // send heartbeats
                 }
 
-                if (node.get_role().equals("leader")
-                        && (last_heartbeat_time == -1
-                                || System.currentTimeMillis()
-                                        - last_heartbeat_time
-                                                >= HEARTBEAT_INTERVAL_MS)) {
-                    // If we're the leader, send heartbeats periodically
-                    System.out.println("Node " + node_id
-                            + " - Leader sending heartbeats.");
-                    last_heartbeat_time = System.currentTimeMillis();
-                    node.send_heartbeat();
-                }
             } catch (InterruptedException e) {
                 // Thread was interrupted, exit gracefully
                 Thread.currentThread().interrupt();

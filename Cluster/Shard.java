@@ -11,6 +11,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.HashMap;
+import java.util.HashSet;
 
 /**
  * Represents a shard (subset) of nodes stored on the consistent hash ring.
@@ -121,11 +122,15 @@ public class Shard {
     }
 
     /** Return the first node in the left list, or null if empty. */
-    public Node get() {
-        if (left.isEmpty()) {
-            return null;
-        }
-        return left.getFirst();
+    public Node get(HashSet<String> killed) {
+        for (Node n : left)
+            if (!killed.contains(n.id))
+                return n;
+        for (Node n : right)
+            if (!killed.contains(n.id))
+                return n;
+
+        return null;
     }
 
     /**

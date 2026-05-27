@@ -1,9 +1,8 @@
-import java.util.LinkedList;
 import java.util.ArrayList;
 
 public class Raft_log {
-    private LinkedList<Log_entry> committed_log;
-    private LinkedList<Log_entry> uncommitted_log;
+    private ArrayList<Log_entry> committed_log;
+    private ArrayList<Log_entry> uncommitted_log;
     private Pipe state_machine_in;
 
     private String remove_first_if(String command, String term) {
@@ -18,8 +17,8 @@ public class Raft_log {
     }
 
     public Raft_log(Pipe state_machine_in) {
-        this.committed_log = new LinkedList<>();
-        this.uncommitted_log = new LinkedList<>();
+        this.committed_log = new ArrayList<>();
+        this.uncommitted_log = new ArrayList<>();
         this.state_machine_in = state_machine_in;
     }
 
@@ -35,7 +34,7 @@ public class Raft_log {
 
     public void commit_entries(int up_to_index) {
         while (!uncommitted_log.isEmpty()
-                && uncommitted_log.getFirst().index <= up_to_index) {
+                && uncommitted_log.get(0).index <= up_to_index) {
             Log_entry entry_to_commit = uncommitted_log.removeFirst();
             committed_log.add(entry_to_commit);
             state_machine_in.put(entry_to_commit.command);
@@ -44,14 +43,14 @@ public class Raft_log {
 
     public String get_last_committed_command() {
         if (!committed_log.isEmpty()) {
-            return committed_log.getLast().command;
+            return committed_log.get(committed_log.size() - 1).command;
         }
         return null; // No committed entries
     }
 
     public int get_commit_idx() {
         if (!committed_log.isEmpty()) {
-            return committed_log.getLast().index;
+            return committed_log.get(committed_log.size() - 1).index;
         }
         return -1; // No committed entries
     }
@@ -62,9 +61,9 @@ public class Raft_log {
 
     public int get_last_term() {
         if (!uncommitted_log.isEmpty()) {
-            return uncommitted_log.getLast().term;
+            return uncommitted_log.get(uncommitted_log.size() - 1).term;
         } else if (!committed_log.isEmpty()) {
-            return committed_log.getLast().term;
+            return committed_log.get(committed_log.size() - 1).term;
         }
         return 0; // No entries, so term is 0
     }
@@ -91,8 +90,8 @@ public class Raft_log {
             return;
         }
 
-        if (max < committed_log.size() - 1)
-            return;
+        if (max < committed_log.size())
+            clear_uncommitted();
 
         uncommitted_log.subList(max - committed_log.size() + 1,
                                 uncommitted_log.size()).clear();

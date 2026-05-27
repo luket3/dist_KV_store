@@ -23,6 +23,7 @@ public class Server {
     public static Pipe raft_in;
     public static Pipe state_machine_in;
     public static int return_code;
+    public static Thread raft;
 
 
     /**
@@ -70,13 +71,15 @@ public class Server {
 
         Comm comm = new Comm(listener.listen_for_connection());
         String request = comm.read_string();
+        String message_type = request.split(" ")[0];
 
-        String message_type = request.substring(0, request.indexOf(" "));
         if (!message_type.equals("AppendEntries")
                 && !message_type.equals("RequestVote")
                 && !message_type.equals("ClientCommand")
                 && !message_type.equals("AppendEntriesReply")
-                && !message_type.equals("RequestVoteReply")) {
+                && !message_type.equals("RequestVoteReply")
+                && !message_type.equals("Kill")
+                && !message_type.equals("Revive")) {
             request = "ClientCommand " + Integer.toString(return_code) + " " + request;
 
             Message_info reply = new Message_info(
@@ -100,7 +103,7 @@ public class Server {
 
         // start Raft instance in separate thread to handle
         // cluster communication
-        Thread raft = new Thread(new Raft(
+        raft = new Thread(new Raft(
                 raft_in,
                 state_machine_in,
                 nodes.get_shard_w_node(node_id).get_all_nodes(),

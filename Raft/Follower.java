@@ -122,7 +122,7 @@ public class Follower extends Role {
 
                 raft_state.log.clear_to(prev_log_index);
                 for (String cmd : split)
-                    raft_state.log.append_entry(cmd, raft_state.term);
+                    raft_state.log.append_entry(cmd, leader_term);
             }
 
             // commit upto leadercommit

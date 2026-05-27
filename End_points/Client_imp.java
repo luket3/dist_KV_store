@@ -9,6 +9,9 @@
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.HashSet;
 
 /**
  * Client for the distributed key-value store.
@@ -24,6 +27,11 @@ public class Client_imp {
     /** Communication helper used to send/receive messages to nodes. */
     private Comm comm;
 
+    /** Raw node lookup by id. */
+    private Map<String, Node> nodes;
+
+    private HashSet<String> killed;
+
     /**
      * Create a new {@code Client} instance and initialize communication and
      * the consistent-hash map.
@@ -33,6 +41,8 @@ public class Client_imp {
     Client_imp() throws Exception {
         comm = new Comm();
         map = new Consistent_hash_map();
+        nodes = new HashMap<>();
+        killed = new HashSet<>();
     }
 
     /**
@@ -51,13 +61,13 @@ public class Client_imp {
 
         for (String line : file_data) {
             String[] split = line.split(",");
-            map.add_node(
-                new Node(
+            Node n = new Node(
                     split[0],
                     split[1],
                     Integer.parseInt(split[2])
-                )
             );
+            map.add_node(n);
+            nodes.put(n.id, n);
         }
 
     }
@@ -82,12 +92,33 @@ public class Client_imp {
     public boolean send_query(String query) throws Exception {
         String[] split = query.split(" ");
 
-        if (
+        // Handle Kill/Revive targeting a specific node id
+        if (split.length == 2 && (split[0].equals("Kill") || split[0].equals("Revive"))) {
+
+            String targetId = split[1];
+            if (split[0].equals("Kill"))
+                killed.add(targetId);
+            else if (split[0].equals("Revive"))
+                killed.remove(targetId);
+
+            Node target = nodes.get(targetId);
+            if (target == null)
+                return false;
+
+            comm.create_socket(target.ip, target.port);
+            comm.send_string(query);
+            comm.close_socket();
+
+            return false;
+            
+        }
+        // Existing KV operations: Get/Delete key or Put key value
+        else if (
             (split.length == 2
              && (split[0].equals("Get") || split[0].equals("Delete")))
             || (split.length == 3 && split[0].equals("Put"))
         ) {
-            Node n = map.get_shard(split[1]).get();
+            Node n = map.get_shard(split[1]).get(killed);
 
             comm.create_socket(n.ip, n.port);
             comm.send_string(query);

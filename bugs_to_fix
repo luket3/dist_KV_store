@@ -1,23 +1,12 @@
-during election a node should only be able to be voted for by a node 1 time
-
-a vote from a previous term should be disregarded
-
-check how next_index is updated when a node becomes a new leader, make sure it works even when leader changes
-
 test network partitions
 
 test change of leader
 
 change heartbeat timer so it's less complex
 
-leader dosne't update match_index for itself
-
-Leader role state is not reinitialized on leader transition
-
-heartbeat timeout interval
-
-candidate does not step down on AppendEntries with equal term
-
 needs better msg parsing in split_msg
 
-make it ArrayList in Raft_log
+leader should not commit messages from previous terms
+
+leader log repair
+when going back index's if a majority aren't at match index

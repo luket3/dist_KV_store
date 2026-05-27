@@ -31,7 +31,7 @@ public class Client {
          String query = br.readLine();
 
          if (!client.send_query(query)) {
-            System.out.println("invalid query");
+            System.out.println("Kill msg or invalid");
             continue;
          }
          String response = client.get_response();
