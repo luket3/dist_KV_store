@@ -6,75 +6,75 @@ import java.util.Set;
  */
 public class Candidate extends Role {
 
-    private int votes_received;
+    private int votesReceived;
     private Set<String> votedNodes;
 
-    public Candidate(Raft_state raft_state) {
-        super(raft_state);
-        this.votes_received = 0;
+    public Candidate(RaftState raftState) {
+        super(raftState);
+        this.votesReceived = 0;
         this.votedNodes = new HashSet<>();
     }
 
-    public boolean request_vote(String[] message_parts) {
+    public boolean requestVote(String[] messageParts) {
         // Handle a RequestVote response while this node is a candidate.
         // Format: RequestVote <term> <senderID> <voteGranted>
-        if (message_parts.length < 3) {
+        if (messageParts.length < 3) {
             // Invalid message format
             return false; // Treat as no vote granted
         }
-        int voter_term = Integer.parseInt(message_parts[1]);
-        String sender_id = message_parts[2];
-        boolean vote_granted = Boolean.parseBoolean(message_parts[3]);
+        int voterTerm = Integer.parseInt(messageParts[1]);
+        String senderId = messageParts[2];
+        boolean voteGranted = Boolean.parseBoolean(messageParts[3]);
 
         // Update term and revert to follower if we see a higher term
-        if (voter_term > raft_state.term) {
-            raft_state.term = voter_term;
-            raft_state.type = "follower";
-            raft_state.voted_for = null;
+        if (voterTerm > raftState.term) {
+            raftState.term = voterTerm;
+            raftState.type = "follower";
+            raftState.votedFor = null;
             return false;
         }
 
         // Ignore votes from previous terms
-        if (voter_term < raft_state.term) {
+        if (voterTerm < raftState.term) {
             return false;
         }
 
         // Only count each node's vote once
-        if (votedNodes.contains(sender_id)) {
+        if (votedNodes.contains(senderId)) {
             return false;
         }
 
-        if (vote_granted) {
-            votedNodes.add(sender_id);
-            this.votes_received++;
+        if (voteGranted) {
+            votedNodes.add(senderId);
+            this.votesReceived++;
             // Check if we have won the election
-            if (this.votes_received > raft_state.number_of_nodes / 2) {
-                raft_state.type = "leader";
-                // Initialize leader state (match_index and next_index) for this node
-                raft_state.initializeLeaderState();
+            if (this.votesReceived > raftState.numberOfNodes / 2) {
+                raftState.type = "leader";
+                // Initialize leader state (matchIndex and nextIndex) for this node
+                raftState.initializeLeaderState();
             }
         }
         return true;
     }
 
-    public void start_election() {
+    public void startElection() {
         // Increment term and transition this node into candidate state.
-        raft_state.term++;
-        raft_state.type = "candidate";
+        raftState.term++;
+        raftState.type = "candidate";
         // Clear voting set for new election
         this.votedNodes.clear();
         // Vote for self as the current candidate.
-        raft_state.voted_for = raft_state.id;
+        raftState.votedFor = raftState.id;
         // In a real implementation this would be the node's own identifier
-        this.votes_received = 1; // Vote for self
-        this.votedNodes.add(raft_state.id); // Record self vote
+        this.votesReceived = 1; // Vote for self
+        this.votedNodes.add(raftState.id); // Record self vote
 
         // Broadcast RequestVote RPCs to the other cluster nodes.
         broadcast("RequestVote " +
-               raft_state.term + " " +
-               raft_state.id + " " +
-               raft_state.log.get_last_idx() + " " +
-               raft_state.log.get_last_term());
+               raftState.term + " " +
+               raftState.id + " " +
+               raftState.log.getLastIdx() + " " +
+               raftState.log.getLastTerm());
     }
 
     /**
@@ -87,12 +87,12 @@ public class Candidate extends Role {
                             message);
 
         Comm comm = new Comm();
-        for (Node node : raft_state.nodes.values()) {
-            if (!node.id.equals(raft_state.id)) {
+        for (Node node : raftState.nodes.values()) {
+            if (!node.id.equals(raftState.id)) {
                 try {
-                    comm.create_socket(node.ip, node.port);
-                    comm.send_string(message);
-                    comm.close_socket();
+                    comm.createSocket(node.ip, node.port);
+                    comm.sendString(message);
+                    comm.closeSocket();
                 } catch (Exception e) {
                     System.err.println("Failed to send message to node "
                             + node.id);

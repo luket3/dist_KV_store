@@ -13,38 +13,38 @@ import java.nio.file.Paths;
 
 /**
  * Server runner program that initializes listening sockets and spawns a
- * {@link State_machine} worker thread for each incoming connection.
+ * {@link StateMachine} worker thread for each incoming connection.
  */
 public class Server {
     public static Listener listener;
-    public static Consistent_hash_map nodes;
-    public static String node_id;
+    public static ConsistentHashMap nodes;
+    public static String nodeId;
     public static int port;
-    public static Pipe raft_in;
-    public static Pipe state_machine_in;
-    public static int return_code;
+    public static Pipe raftIn;
+    public static Pipe stateMachineIn;
+    public static int returnCode;
     public static Thread raft;
 
 
     /**
      * Initialize static runner state from command-line arguments.
      *
-     * @param args expected to contain {@code node_id} and {@code port}
+     * @param args expected to contain {@code nodeId} and {@code port}
      */
     public static void init(String args[]) throws Exception {
         listener = new Listener();
-        node_id = args[0];
+        nodeId = args[0];
         port = Integer.parseInt(args[1]);
-        return_code = 0;
-        nodes = new Consistent_hash_map();
+        returnCode = 0;
+        nodes = new ConsistentHashMap();
 
         try {
-            List<String> file_data =
+            List<String> fileData =
                 Files.readAllLines(Paths.get("network.config"));
 
-            for (String line : file_data) {
+            for (String line : fileData) {
                 String[] split = line.split(",");
-                nodes.add_node(new Node(
+                nodes.addNode(new Node(
                         split[0],
                         split[1],
                         Integer.parseInt(split[2])
@@ -57,8 +57,8 @@ public class Server {
             System.exit(1);
         }
 
-        raft_in = new Pipe();
-        state_machine_in = new Pipe();
+        raftIn = new Pipe();
+        stateMachineIn = new Pipe();
     }
 
     /**
@@ -67,35 +67,35 @@ public class Server {
      *
      * @throws Exception on socket accept or thread creation errors
      */
-    public static void hand_off() throws Exception {
+    public static void handOff() throws Exception {
 
-        Comm comm = new Comm(listener.listen_for_connection());
-        String request = comm.read_string();
-        String message_type = request.split(" ")[0];
+        Comm comm = new Comm(listener.listenForConnection());
+        String request = comm.readString();
+        String messageType = request.split(" ")[0];
 
-        if (!message_type.equals("AppendEntries")
-                && !message_type.equals("RequestVote")
-                && !message_type.equals("ClientCommand")
-                && !message_type.equals("AppendEntriesReply")
-                && !message_type.equals("RequestVoteReply")
-                && !message_type.equals("Kill")
-                && !message_type.equals("Revive")) {
-            request = "ClientCommand " + Integer.toString(return_code) + " " + request;
+        if (!messageType.equals("AppendEntries")
+                && !messageType.equals("RequestVote")
+                && !messageType.equals("ClientCommand")
+                && !messageType.equals("AppendEntriesReply")
+                && !messageType.equals("RequestVoteReply")
+                && !messageType.equals("Kill")
+                && !messageType.equals("Revive")) {
+            request = "ClientCommand " + Integer.toString(returnCode) + " " + request;
 
-            Message_info reply = new Message_info(
-                    Integer.toString(return_code) + " Reply", comm);
-            state_machine_in.put(reply);
-            return_code += 1;
+            MessageInfo reply = new MessageInfo(
+                    Integer.toString(returnCode) + " Reply", comm);
+            stateMachineIn.put(reply);
+            returnCode += 1;
 
         }
 
-        raft_in.put(request);
+        raftIn.put(request);
     }
 
     /**
      * Main entry point for the server process.
      *
-     * @param args command-line arguments: {@code node_id} {@code port}
+     * @param args command-line arguments: {@code nodeId} {@code port}
      * @throws Exception on initialization or runtime socket errors
      */
     public static void main(String[] args) throws Exception {
@@ -104,25 +104,25 @@ public class Server {
         // start Raft instance in separate thread to handle
         // cluster communication
         raft = new Thread(new Raft(
-                raft_in,
-                state_machine_in,
-                nodes.get_shard_w_node(node_id).get_all_nodes(),
-                node_id
+                raftIn,
+                stateMachineIn,
+                nodes.getShardWithNode(nodeId).getAllNodes(),
+                nodeId
         ));
         raft.start();
 
         // start state machine instance in separate thread to handle
         // client queries
-        Thread state_machine = new Thread(
-                new State_machine(state_machine_in, node_id));
-        state_machine.start();
+        Thread stateMachine = new Thread(
+                new StateMachine(stateMachineIn, nodeId));
+        stateMachine.start();
 
         /*
          * Main server loop: listen for incoming connections and pass to Raft
          */
-        listener.create_socket(port);
+        listener.createSocket(port);
         while (true) {
-            hand_off();
+            handOff();
         }
     }
 }

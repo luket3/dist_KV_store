@@ -20,9 +20,9 @@ import java.util.HashSet;
  * consistent-hash map, sending queries to the shard responsible for a key,
  * and receiving responses from servers via the {@code Comm} helper.</p>
  */
-public class Client_imp {
+public class ClientImp {
     /** Map used to determine which shard holds a given key. */
-    private Consistent_hash_map map;
+    private ConsistentHashMap map;
 
     /** Communication helper used to send/receive messages to nodes. */
     private Comm comm;
@@ -38,9 +38,9 @@ public class Client_imp {
      *
      * @throws Exception if initialization of underlying components fails
      */
-    Client_imp() throws Exception {
+    ClientImp() throws Exception {
         comm = new Comm();
-        map = new Consistent_hash_map();
+        map = new ConsistentHashMap();
         nodes = new HashMap<>();
         killed = new HashSet<>();
     }
@@ -55,18 +55,18 @@ public class Client_imp {
      *
      * @throws Exception if the configuration file cannot be read or parsed
      */
-    public void add_nodes() throws Exception {
-        List<String> file_data =
+    public void addNodes() throws Exception {
+        List<String> fileData =
             Files.readAllLines(Paths.get("network.config"));
 
-        for (String line : file_data) {
+        for (String line : fileData) {
             String[] split = line.split(",");
             Node n = new Node(
                     split[0],
                     split[1],
                     Integer.parseInt(split[2])
             );
-            map.add_node(n);
+            map.addNode(n);
             nodes.put(n.id, n);
         }
 
@@ -89,7 +89,7 @@ public class Client_imp {
      * attempted), {@code false} for invalid formats
      * @throws Exception on communication errors while attempting to send
      */
-    public boolean send_query(String query) throws Exception {
+    public boolean sendQuery(String query) throws Exception {
         String[] split = query.split(" ");
 
         // Handle Kill/Revive targeting a specific node id
@@ -105,9 +105,9 @@ public class Client_imp {
             if (target == null)
                 return false;
 
-            comm.create_socket(target.ip, target.port);
-            comm.send_string(query);
-            comm.close_socket();
+            comm.createSocket(target.ip, target.port);
+            comm.sendString(query);
+            comm.closeSocket();
 
             return false;
             
@@ -118,10 +118,10 @@ public class Client_imp {
              && (split[0].equals("Get") || split[0].equals("Delete")))
             || (split.length == 3 && split[0].equals("Put"))
         ) {
-            Node n = map.get_shard(split[1]).get(killed);
+            Node n = map.getShard(split[1]).get(killed);
 
-            comm.create_socket(n.ip, n.port);
-            comm.send_string(query);
+            comm.createSocket(n.ip, n.port);
+            comm.sendString(query);
         }
         else {
             return false;
@@ -136,9 +136,9 @@ public class Client_imp {
      * @return the response string read from the server
      * @throws Exception on I/O or communication errors
      */
-    public String get_response() throws Exception{
-        String response = comm.read_string();
-        comm.close_socket();
+    public String getResponse() throws Exception{
+        String response = comm.readString();
+        comm.closeSocket();
         return response;
     }
 }

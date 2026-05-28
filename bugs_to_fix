@@ -2,11 +2,9 @@ test network partitions
 
 test change of leader
 
-change heartbeat timer so it's less complex
+test raft under a bunch of different node failures
 
-needs better msg parsing in split_msg
-
-leader should not commit messages from previous terms
-
-leader log repair
-when going back index's if a majority aren't at match index
+future:
+make client retry based on failed connections with different nodes
+get consistent hash map from server
+be able to add and remove nodes as pleased

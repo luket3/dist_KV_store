@@ -5,139 +5,139 @@ import java.util.*;
  */
 public class Leader extends Role {
 
-    public Leader(Raft_state raft_state) {
-        super(raft_state);
+    public Leader(RaftState raftState) {
+        super(raftState);
     }
 
-    public void process_client_command(String command) {
+    public void processClientCommand(String command) {
         // Handle a client command when this node is the leader.
         // Format: ClientCommand <command>
 
         // Append the command to the log as an uncommitted entry
         System.out.println("Leader processing client command: " + command);
-        raft_state.log.append_entry(command, raft_state.term);
-        // Update own match_index to reflect the new entry
-        raft_state.match_index.put(raft_state.id, raft_state.log.get_last_idx());
+        raftState.log.appendEntry(command, raftState.term);
+        // Update own matchIndex to reflect the new entry
+        raftState.matchIndex.put(raftState.id, raftState.log.getLastIdx());
 
-        broadcast_append_entries();
+        broadcastAppendEntries();
     }
 
-    public void append_entries(String[] message_parts) {
+    public void appendEntries(String[] messageParts) {
         // Process a follower's AppendEntries response when this node is
         // acting as leader.
         // Format: AppendEntries <term> <senderID> <success> <matchIndex>
 
-        if (message_parts.length < 4) {
+        if (messageParts.length < 4) {
             // Invalid message format
             return;
         }
 
-        int follower_term = Integer.parseInt(message_parts[1]);
-        String sender_id = message_parts[2];
-        boolean success = Boolean.parseBoolean(message_parts[3]);
-        int sndr_match_idx = Integer.parseInt(message_parts[4]);
+        int followerTerm = Integer.parseInt(messageParts[1]);
+        String senderId = messageParts[2];
+        boolean success = Boolean.parseBoolean(messageParts[3]);
+        int senderMatchIdx = Integer.parseInt(messageParts[4]);
 
         // Update term and revert to follower if we see a higher term
-        if (follower_term > raft_state.term) {
-            raft_state.term = follower_term;
-            raft_state.type = "follower";
-            raft_state.voted_for = null;
+        if (followerTerm > raftState.term) {
+            raftState.term = followerTerm;
+            raftState.type = "follower";
+            raftState.votedFor = null;
             return;
         }
 
         // If AppendEntries was successful, update match index for that follower
         if (success) {
 
-            // register follower as having entries up to sndr_match_idx
-            raft_state.match_index.put(sender_id, Math.max(raft_state.match_index.get(sender_id), sndr_match_idx));
-            raft_state.next_index.put(sender_id, raft_state.match_index.get(sender_id) + 1);
+            // register follower as having entries up to senderMatchIdx
+            raftState.matchIndex.put(senderId, Math.max(raftState.matchIndex.get(senderId), senderMatchIdx));
+            raftState.nextIndex.put(senderId, raftState.matchIndex.get(senderId) + 1);
 
             // commit such that majority nodes have log entry
-            for (int i = raft_state.log.get_last_idx(); i > raft_state.log.get_commit_idx(); i--) {
+            for (int i = raftState.log.getLastIdx(); i > raftState.log.getCommitIdx(); i--) {
 
                 long count = 0;
-                for (int value : raft_state.match_index.values()) {
+                for (int value : raftState.matchIndex.values()) {
                     if (value >= i)
                         count++;
                 }
 
-                if (count > raft_state.number_of_nodes / 2 
-                        && raft_state.log.get(i).term == raft_state.term) {
-                    raft_state.log.commit_entries(i);
-                    broadcast_append_entries();
+                if (count > raftState.numberOfNodes / 2 
+                        && raftState.log.get(i).term == raftState.term) {
+                    raftState.log.commitEntries(i);
+                    broadcastAppendEntries();
                     break;
                 }
             }
         }
         else {
-            raft_state.next_index.put(sender_id, raft_state.next_index.get(sender_id) - 1);
-            if (raft_state.next_index.get(sender_id) < 0)
-                raft_state.next_index.put(sender_id, 0);
+            raftState.nextIndex.put(senderId, raftState.nextIndex.get(senderId) - 1);
+            if (raftState.nextIndex.get(senderId) < 0)
+                raftState.nextIndex.put(senderId, 0);
 
             // check if raft log needs to be truncated
-            // Compute a truncate point based on majority of followers' next_index.
-            // If a majority of nodes have next_index <= K, then their last
+            // Compute a truncate point based on majority of followers' nextIndex.
+            // If a majority of nodes have nextIndex <= K, then their last
             // stored index is <= K-1; leader should truncate uncommitted
             // entries beyond K-1 to match the cluster.
             ArrayList<Integer> nextIndices = new ArrayList<>();
-            for (Integer v : raft_state.next_index.values())
+            for (Integer v : raftState.nextIndex.values())
                 nextIndices.add(v);
             Collections.sort(nextIndices);
 
-            int majorityPos = raft_state.number_of_nodes / 2; // 0-based
+            int majorityPos = raftState.numberOfNodes / 2; // 0-based
             if (majorityPos < nextIndices.size()) {
                 int K = nextIndices.get(majorityPos);
                 int truncateTo = K - 1;
 
-                if (truncateTo < raft_state.log.get_last_idx()) {
+                if (truncateTo < raftState.log.getLastIdx()) {
                     System.out.println("Leader: truncating uncommitted entries to index " + truncateTo);
-                    raft_state.log.clear_to(truncateTo);
+                    raftState.log.clearTo(truncateTo);
 
-                    // Ensure match_index and next_index are consistent with truncated log
-                    int lastIdx = raft_state.log.get_last_idx();
-                    for (String nid : raft_state.match_index.keySet()) {
-                        int mi = raft_state.match_index.get(nid);
+                    // Ensure matchIndex and nextIndex are consistent with truncated log
+                    int lastIdx = raftState.log.getLastIdx();
+                    for (String nid : raftState.matchIndex.keySet()) {
+                        int mi = raftState.matchIndex.get(nid);
                         if (mi > lastIdx)
-                            raft_state.match_index.put(nid, lastIdx);
-                        int ni = raft_state.next_index.get(nid);
+                            raftState.matchIndex.put(nid, lastIdx);
+                        int ni = raftState.nextIndex.get(nid);
                         if (ni > lastIdx + 1)
-                            raft_state.next_index.put(nid, lastIdx + 1);
+                            raftState.nextIndex.put(nid, lastIdx + 1);
                     }
                 }
             }
 
-            send_append_entries(raft_state.nodes.get(sender_id));
+            sendAppendEntries(raftState.nodes.get(senderId));
         }
     }
 
-    public void broadcast_append_entries() {
-        System.out.println("leader node: " + raft_state.id + 
+    public void broadcastAppendEntries() {
+        System.out.println("leader node: " + raftState.id + 
                            " broadcasting append entries message");
 
-        for (Node node : raft_state.nodes.values()) {
-            if (!node.id.equals(raft_state.id))
-                send_append_entries(node);
+        for (Node node : raftState.nodes.values()) {
+            if (!node.id.equals(raftState.id))
+                sendAppendEntries(node);
         }
     }
 
-    public void send_append_entries(Node node) {
+    public void sendAppendEntries(Node node) {
         // Send an empty AppendEntries RPC to all followers to maintain
         // leadership
 
-        // update prev_log_index and prev_log_term
-        int prev_log_index = raft_state.next_index.get(node.id) - 1;
-        int prev_log_term = (prev_log_index >= 0) ?
-                                raft_state.log.get(prev_log_index).term : 0;
+        // update prevLogIndex and prevLogTerm
+        int prevLogIndex = raftState.nextIndex.get(node.id) - 1;
+        int prevLogTerm = (prevLogIndex >= 0) ?
+                                raftState.log.get(prevLogIndex).term : 0;
 
-        send_to_node(node,
+        sendToNode(node,
             "AppendEntries "
-            + raft_state.term + " "
-            + raft_state.id + " "
-            + prev_log_index + " "
-            + prev_log_term + " "
-            + raft_state.log.get_commit_idx() + " "
-            + raft_state.log.get_as_string(raft_state.next_index.get(node.id),
-                                            raft_state.log.get_last_idx())
+            + raftState.term + " "
+            + raftState.id + " "
+            + prevLogIndex + " "
+            + prevLogTerm + " "
+            + raftState.log.getCommitIdx() + " "
+            + raftState.log.getAsString(raftState.nextIndex.get(node.id),
+                                            raftState.log.getLastIdx())
         );
     }
 }

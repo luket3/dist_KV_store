@@ -24,7 +24,7 @@ import java.util.HashSet;
 public class Shard {
     private LinkedList<Node> left;
     private LinkedList<Node> right;
-    private int min_shard_size;
+    private int minShardSize;
 
     public String id;
     public int length;
@@ -34,8 +34,8 @@ public class Shard {
      * Internal constructor used when creating a split shard with an initial
      * node list.
      */
-    private Shard(String id, int min_shard_size, LinkedList<Node> nodes) {
-        this(id,min_shard_size);
+    private Shard(String id, int minShardSize, LinkedList<Node> nodes) {
+        this(id,minShardSize);
         this.left = nodes;
         this.length = nodes.size();
     }
@@ -43,10 +43,10 @@ public class Shard {
     /**
      * Create an empty shard with the given id and minimum size threshold.
      */
-    public Shard(String id, int min_shard_size) {
+    public Shard(String id, int minShardSize) {
         this.id = id;
         this.length = 0;
-        this.min_shard_size = min_shard_size;
+        this.minShardSize = minShardSize;
 
         this.left = new LinkedList<>();
         this.right = new LinkedList<>();
@@ -55,11 +55,11 @@ public class Shard {
 
     /**
      * Add a node to this shard. Nodes go to the left list until the shard
-     * reaches {@code min_shard_size}, after which nodes are appended to the
+     * reaches {@code minShardSize}, after which nodes are appended to the
      * right list.
      */
-    public void add_node(Node n) {
-        if (length < min_shard_size)
+    public void addNode(Node n) {
+        if (length < minShardSize)
             left.add(n);
         else
             right.add(n);
@@ -71,9 +71,9 @@ public class Shard {
      * Remove a node from this shard by id and rebalance left/right lists if
      * necessary.
      */
-    public void remove_node(String id) {
+    public void removeNode(String id) {
         Iterator<Node> it = left.iterator();
-        boolean left_side = true;
+        boolean leftSide = true;
 
         while (it.hasNext()) {
             if (it.next().id.equals(id)) {
@@ -81,14 +81,14 @@ public class Shard {
                 break;
             }
 
-            if (left_side && !it.hasNext()) {
+            if (leftSide && !it.hasNext()) {
                 it = right.iterator();
-                left_side = false;
+                leftSide = false;
             }
         }
         length--;
 
-        if (left.size() < min_shard_size && right.size() >= 1)
+        if (left.size() < minShardSize && right.size() >= 1)
             left.add(right.removeLast());
     }
 
@@ -97,27 +97,27 @@ public class Shard {
      * size. The current shard keeps the left list; a new shard is created
      * containing the right list.
      *
-     * @param new_id id for the newly created shard
+     * @param newId id for the newly created shard
     * @return the newly created {@link Shard}, or {@code null} if splitting
     * is not applicable
      */
-    public Shard split(String new_id) {
-        if (length != min_shard_size*2)
+    public Shard split(String newId) {
+        if (length != minShardSize*2)
             return null;
 
-        length = min_shard_size;
-        Shard new_shard = new Shard(new_id, min_shard_size, right);
+        length = minShardSize;
+        Shard newShard = new Shard(newId, minShardSize, right);
         right = new LinkedList<>();
-        return new_shard;
+        return newShard;
     }
 
     /** Return nodes currently stored on the left side of the shard. */
-    public List<Node> get_left() {
+    public List<Node> getLeft() {
         return left;
     }
 
     /** Return nodes currently stored on the right side of the shard. */
-    public List<Node> get_right() {
+    public List<Node> getRight() {
         return right;
     }
 
@@ -156,14 +156,14 @@ public class Shard {
      *
      * @return a map containing all nodes in this shard
      */
-    public HashMap<String, Node> get_all_nodes() {
-        HashMap<String, Node> all_nodes = new HashMap<>();
+    public HashMap<String, Node> getAllNodes() {
+        HashMap<String, Node> allNodes = new HashMap<>();
         for (Node n : left) {
-            all_nodes.put(n.id, n);
+            allNodes.put(n.id, n);
         }
         for (Node n : right) {
-            all_nodes.put(n.id, n);
+            allNodes.put(n.id, n);
         }
-        return all_nodes;
+        return allNodes;
     }
 }

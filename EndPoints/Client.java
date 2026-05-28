@@ -23,18 +23,18 @@ public class Client {
      * @throws Exception if initialization fails
      */
    public static void main(String[] args) throws Exception {
-      Client_imp client = new Client_imp();
-      client.add_nodes();
+      ClientImp client = new ClientImp();
+      client.addNodes();
       BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
 
       while(true) {
          String query = br.readLine();
 
-         if (!client.send_query(query)) {
+         if (!client.sendQuery(query)) {
             System.out.println("Kill msg or invalid");
             continue;
          }
-         String response = client.get_response();
+         String response = client.getResponse();
          System.out.println(response);
       }
    }

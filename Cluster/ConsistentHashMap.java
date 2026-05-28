@@ -19,57 +19,57 @@ import java.util.Map;
  * instances.
  *
  * <p>Each real shard is represented by multiple virtual shard entries on the
- * ring (controlled by {@code virtual_shards}). The structure automatically
- * splits and merges shards based on the configured {@code min_shard_size}.</p>
+ * ring (controlled by {@code virtualShards}). The structure automatically
+ * splits and merges shards based on the configured {@code minShardSize}.</p>
  */
-public class Consistent_hash_map {
+public class ConsistentHashMap {
 
     /** Ring mapping 64-bit hash values to shard metadata. */
     private final TreeMap<Long, Shard> ring; // ring containing node metadata
 
     /** Number of virtual shard replicas per real shard on the ring. */
-    private final int virtual_shards = 3;
+    private final int virtualShards = 3;
     // number of instances of each real node in ring
 
     /** Minimum desirable shard size before rebalancing occurs. */
-    private final int min_shard_size = 3;
+    private final int minShardSize = 3;
 
     /** Monotonically-increasing identifier used when creating new shards. */
-    private int curr_shard_id = 0;
+    private int currShardId = 0;
 
     /**
      * Add a new shard to the ring. If {@code shard} is {@code null} a new
      * empty {@link Shard} is allocated and placed on the ring.
      */
-    private void add_shard(Shard shard) throws Exception {
+    private void addShard(Shard shard) throws Exception {
 
         if (shard == null)
-            shard = new Shard("shard"+curr_shard_id, min_shard_size);
+            shard = new Shard("shard"+currShardId, minShardSize);
 
-        for (int i = 0; i < virtual_shards; i++)
-            ring.put(Hash("shard"+curr_shard_id+i),shard);
-        curr_shard_id++;
+        for (int i = 0; i < virtualShards; i++)
+            ring.put(Hash("shard"+currShardId+i),shard);
+        currShardId++;
     }
 
     /**
      * Remove a shard from the ring and redistribute its leftover nodes.
      */
-    private void remove_shard(Shard shard) throws Exception {
-        for (int i = 0; i < virtual_shards; i++)
+    private void removeShard(Shard shard) throws Exception {
+        for (int i = 0; i < virtualShards; i++)
             ring.remove(Hash(shard.id+i));
 
-        List<Node> left_over = shard.get_left();
-        for (Node n : left_over) {
-            add_node(n);
+        List<Node> leftOver = shard.getLeft();
+        for (Node n : leftOver) {
+            addNode(n);
         }
     }
 
     /**
      * Create an empty consistent-hash ring and allocate the initial shard.
      */
-    public Consistent_hash_map() throws Exception {
+    public ConsistentHashMap() throws Exception {
         ring = new TreeMap<>();
-        add_shard(null);
+        addShard(null);
     }
 
     /**
@@ -78,12 +78,12 @@ public class Consistent_hash_map {
      * @param n node to add
      * @throws Exception on errors during shard splitting or modification
      */
-    public void add_node(Node n) throws Exception {
-        Shard shard = get_shard(n.id);
-        shard.add_node(n);
+    public void addNode(Node n) throws Exception {
+        Shard shard = getShard(n.id);
+        shard.addNode(n);
 
-        if (shard.length >= min_shard_size*2)
-            add_shard(shard.split("shard"+curr_shard_id));
+        if (shard.length >= minShardSize*2)
+            addShard(shard.split("shard"+currShardId));
     }
 
     /**
@@ -92,12 +92,12 @@ public class Consistent_hash_map {
      * @param id identifier of the node to remove
      * @throws Exception on errors during shard merging or modification
      */
-    public void remove_node(String id) throws Exception {
-        Shard shard = get_shard(id);
-        shard.remove_node(id);
+    public void removeNode(String id) throws Exception {
+        Shard shard = getShard(id);
+        shard.removeNode(id);
 
-        if (shard.length < min_shard_size && ring.size() > 1)
-            remove_shard(shard);
+        if (shard.length < minShardSize && ring.size() > 1)
+            removeShard(shard);
     }
 
     /**
@@ -109,7 +109,7 @@ public class Consistent_hash_map {
      * if the ring is empty
      * @throws Exception on hashing errors
      */
-    public Shard get_shard(String key) throws Exception {
+    public Shard getShard(String key) throws Exception {
         if (ring.size() < 1)
             return null;
 
@@ -126,7 +126,7 @@ public class Consistent_hash_map {
      * @param id the node id to search for
      * @return the shard containing the node, or null if not found
      */
-    public Shard get_shard_w_node(String id) {
+    public Shard getShardWithNode(String id) {
         for (Shard shard : ring.values())
             if (shard.contains(id))
                 return shard;
@@ -161,12 +161,12 @@ public class Consistent_hash_map {
         for (Map.Entry<Long, Shard> e : ring.entrySet()) {
             System.out.print(e.getValue().id + " ");
 
-            List<Node> left = e.getValue().get_left();
+            List<Node> left = e.getValue().getLeft();
             for (Node n : left) {
                 System.out.print(n.id + " ");
             }
 
-            List<Node> right = e.getValue().get_right();
+            List<Node> right = e.getValue().getRight();
             for (Node n : right) {
                 System.out.print(n.id + " ");
             }

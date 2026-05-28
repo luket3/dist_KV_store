@@ -15,34 +15,34 @@ import java.util.HashMap;
  * <p>Supported queries: {@code Get key}, {@code Put key value},
  * and {@code Delete key}.</p>
  */
-public class State_machine implements Runnable {
+public class StateMachine implements Runnable {
     /** Shared in-memory key-value store. */
     private static HashMap<String,String> store = new HashMap<>();
     Comm comm;
-    Pipe in_pipe;
-    String node_id;
+    Pipe inPipe;
+    String nodeId;
 
-    HashMap<String, Comm> client_info = new HashMap<>();
-    String return_code;
+    HashMap<String, Comm> clientInfo = new HashMap<>();
+    String returnCode;
 
 
-    State_machine(Pipe pipe, String node_id) throws Exception {
-        this.return_code = "0";
-        this.in_pipe = pipe;
-        this.node_id = node_id;
+    StateMachine(Pipe pipe, String nodeId) throws Exception {
+        this.returnCode = "0";
+        this.inPipe = pipe;
+        this.nodeId = nodeId;
         this.comm = new Comm();
     }
 
-    private void send_response(String response) throws Exception {
-        Comm client = client_info.get(return_code);
+    private void sendResponse(String response) throws Exception {
+        Comm client = clientInfo.get(returnCode);
         if (client == null) {
             return;
         }
 
-        System.out.println("Node:" + node_id + " sending response:" + response);
-        client.send_string(response);
-        client.close_socket();
-        client_info.remove(return_code);
+        System.out.println("Node:" + nodeId + " sending response:" + response);
+        client.sendString(response);
+        client.closeSocket();
+        clientInfo.remove(returnCode);
     }
 
     /**
@@ -51,23 +51,23 @@ public class State_machine implements Runnable {
      * @param query textual query to execute
      * @return result string or "null" when no value exists / invalid query
      */
-    public String parse_query(Message_info query) {
+    public String parseQuery(MessageInfo query) {
         String[] split = query.message.split(" ");
         String res;
         
-        return_code = split[0];
-        String message_type = split[1];
+        returnCode = split[0];
+        String messageType = split[1];
 
-        if (message_type.equals("Reply")) {
-            client_info.put(return_code, query.comm);
+        if (messageType.equals("Reply")) {
+            clientInfo.put(returnCode, query.comm);
             return "no response";
         }
 
-        if (message_type.equals("Get"))
+        if (messageType.equals("Get"))
             res = store.get(split[2]);
-        else if (message_type.equals("Put"))
+        else if (messageType.equals("Put"))
             res = store.put(split[2], split[3]);
-        else if (message_type.equals("Delete"))
+        else if (messageType.equals("Delete"))
             res = store.remove(split[2]);
         else
             res = "null";
@@ -82,15 +82,15 @@ public class State_machine implements Runnable {
 
         while (true) {
             try {
-                Message_info query = in_pipe.take_all();
-                String logMessage = "Node:" + node_id + " recieved command:"
+                MessageInfo query = inPipe.takeAll();
+                String logMessage = "Node:" + nodeId + " recieved command:"
                         + query.message;
                 System.out.println(logMessage);
 
-                String response = parse_query(query);
+                String response = parseQuery(query);
 
                 if (!response.equals("no response")) {
-                    send_response(response);
+                    sendResponse(response);
                 }
             }
             catch(Exception e) {

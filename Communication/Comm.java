@@ -30,7 +30,7 @@ public class Comm {
     }
 
     /**
-     * Create an uninitialized {@code Comm}; call {@link #create_socket} to
+     * Create an uninitialized {@code Comm}; call {@link #createSocket} to
      * connect.
      */
     Comm() {}
@@ -40,7 +40,7 @@ public class Comm {
      *
      * @throws Exception on socket close errors
      */
-    public void close_socket() throws Exception {
+    public void closeSocket() throws Exception {
         socket.close();
     }
 
@@ -51,7 +51,7 @@ public class Comm {
      * @param port the remote TCP port
      * @throws Exception on connection failures
      */
-    public void create_socket(String ip, int port) throws Exception {
+    public void createSocket(String ip, int port) throws Exception {
         socket = new Socket(ip, port);
     }
 
@@ -61,7 +61,7 @@ public class Comm {
      * @return the decoded string
      * @throws Exception on I/O errors
      */
-    public String read_string() throws Exception {
+    public String readString() throws Exception {
         DataInputStream in = new DataInputStream(socket.getInputStream());
         int length = in.readInt();
         byte[] buffer = new byte[length];
@@ -76,7 +76,7 @@ public class Comm {
      * @param message the message to send
      * @throws Exception on I/O errors
      */
-    public void send_string(String message) throws Exception
+    public void sendString(String message) throws Exception
     {
         DataOutputStream out = new DataOutputStream(socket.getOutputStream());
         byte[] payload = message.getBytes(StandardCharsets.UTF_8);
@@ -86,7 +86,7 @@ public class Comm {
         out.flush();
     }
 
-    public String get_host_ip() {
+    public String getHostIp() {
         if (socket == null) {
             return null;
         }
@@ -94,7 +94,7 @@ public class Comm {
         return socket.getInetAddress().getHostAddress();
     }
 
-    public int get_host_port() {
+    public int getHostPort() {
         if (socket == null) {
             return -1;
         }
@@ -102,7 +102,7 @@ public class Comm {
         return socket.getPort();
     }
 
-    public String get_lcl_ip() {
+    public String getLclIp() {
         if (socket == null) {
             return null;
         }
@@ -110,7 +110,7 @@ public class Comm {
         return socket.getLocalAddress().getHostAddress();
     }
 
-    public int get_lcl_port() {
+    public int getLclPort() {
         if (socket == null) {
             return -1;
         }

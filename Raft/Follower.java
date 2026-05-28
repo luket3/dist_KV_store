@@ -4,144 +4,144 @@
  */
 public class Follower extends Role {
 
-    public Follower(Raft_state raft_state) {
-        super(raft_state);
+    public Follower(RaftState raftState) {
+        super(raftState);
     }
 
     /**
      * Process a RequestVote RPC from candidate.
      *
-     * @param message_parts the parsed RPC message parts
+     * @param messageParts the parsed RPC message parts
      * @return true if vote was granted, false otherwise
      */
-    public boolean request_vote(String[] message_parts) {
-        // Parse RequestVote RPC parameters from message_parts
+    public boolean requestVote(String[] messageParts) {
+        // Parse RequestVote RPC parameters from messageParts
         // Format: RequestVote <term> <candidateId> <lastLogIndex> <lastLogTerm>
-        if (message_parts.length < 5) {
+        if (messageParts.length < 5) {
             // Invalid message format
             return false;
         }
 
-        int candidate_term = Integer.parseInt(message_parts[1]);
-        String candidate_id = message_parts[2];
-        int last_log_index = Integer.parseInt(message_parts[3]);
-        int last_log_term = Integer.parseInt(message_parts[4]);
+        int candidateTerm = Integer.parseInt(messageParts[1]);
+        String candidateId = messageParts[2];
+        int lastLogIndex = Integer.parseInt(messageParts[3]);
+        int lastLogTerm = Integer.parseInt(messageParts[4]);
 
         // Check current term and update if necessary
-        if (candidate_term > raft_state.term) {
-            raft_state.term = candidate_term;
-            raft_state.type = "follower";
-            raft_state.voted_for = null;
+        if (candidateTerm > raftState.term) {
+            raftState.term = candidateTerm;
+            raftState.type = "follower";
+            raftState.votedFor = null;
         }
 
         // Reject if candidate's term is less than current term
-        if (candidate_term < raft_state.term) {
+        if (candidateTerm < raftState.term) {
             return false;
         }
         
         // Check if candidate's log is at least as up-to-date as receiver's log
-        int receiver_last_log_index = raft_state.log.get_last_idx();
-        int receiver_last_log_term = raft_state.log.get_last_term();
+        int receiverLastLogIndex = raftState.log.getLastIdx();
+        int receiverLastLogTerm = raftState.log.getLastTerm();
 
-        boolean same_term = (last_log_term == receiver_last_log_term);
-        boolean log_up_to_date = (last_log_term > receiver_last_log_term)
-            || (same_term && last_log_index >= receiver_last_log_index);
+        boolean logUpToDate = (lastLogTerm > receiverLastLogTerm)
+            || ((lastLogTerm == receiverLastLogTerm) 
+            && lastLogIndex >= receiverLastLogIndex);
 
         // Vote for candidate if we haven't voted or already voted for this
         // candidate, and the candidate's log is up-to-date
-        boolean vote_granted = log_up_to_date && (
-            raft_state.voted_for == null || raft_state.voted_for.equals(candidate_id)
+        boolean voteGranted = logUpToDate && (
+            raftState.votedFor == null || raftState.votedFor.equals(candidateId)
         );
-        if (vote_granted) {
-            raft_state.voted_for = candidate_id;
+        if (voteGranted) {
+            raftState.votedFor = candidateId;
         }
 
         // Send vote grant status back to the candidate
-        send_to_node(
-            raft_state.nodes.get(candidate_id),
-            "RequestVoteReply " + raft_state.term + " " + raft_state.id + " " + vote_granted
+        sendToNode(
+            raftState.nodes.get(candidateId),
+            "RequestVoteReply " + raftState.term + " " + raftState.id + " " + voteGranted
         );
 
-        return vote_granted;
+        return voteGranted;
     }
 
     /**
      * Process an AppendEntries RPC from leader.
      *
-     * @param message_parts the parsed RPC message parts
+     * @param messageParts the parsed RPC message parts
      * @return true if the RPC was successful, false otherwise
      */
-    public boolean append_entries(String[] message_parts) {
-        // Parse AppendEntries RPC parameters from message_parts
+    public boolean appendEntries(String[] messageParts) {
+        // Parse AppendEntries RPC parameters from messageParts
         // Format: AppendEntries <term> <leaderId> <prevLogIndex>
         // <prevLogTerm> <leaderCommit> [entries...]
-        if (message_parts.length < 6) {
+        if (messageParts.length < 6) {
             // Invalid message format
             return false;
         }
 
-        int leader_term = Integer.parseInt(message_parts[1]);
-        String leader_id = message_parts[2];
-        int prev_log_index = Integer.parseInt(message_parts[3]);
-        int prev_log_term = Integer.parseInt(message_parts[4]);
-        int leader_commit = Integer.parseInt(message_parts[5]);
+        int leaderTerm = Integer.parseInt(messageParts[1]);
+        String leaderId = messageParts[2];
+        int prevLogIndex = Integer.parseInt(messageParts[3]);
+        int prevLogTerm = Integer.parseInt(messageParts[4]);
+        int leaderCommit = Integer.parseInt(messageParts[5]);
 
         // Update term and revert to follower if we see a higher term
-        if (leader_term > raft_state.term) {
-            raft_state.term = leader_term;
-            raft_state.type = "follower";
-            raft_state.voted_for = null;
-        } else if (leader_term < raft_state.term) {
+        if (leaderTerm > raftState.term) {
+            raftState.term = leaderTerm;
+            raftState.type = "follower";
+            raftState.votedFor = null;
+        } else if (leaderTerm < raftState.term) {
             // Reject if leader's term is less than current term
             return false;
         }
 
-        if (raft_state.leader == null || !raft_state.leader.id.equals(leader_id)) {
+        if (raftState.leader == null || !raftState.leader.id.equals(leaderId)) {
             // Update leader information if this is a new leader
-            raft_state.leader = raft_state.nodes.get(leader_id);
-            raft_state.log.clear_uncommitted();
+            raftState.leader = raftState.nodes.get(leaderId);
+            raftState.log.clearUncommitted();
         }
 
-        // Check prev_log_index and prev_log_term match
-        boolean log_match = true;
-        if (prev_log_index >= 0) {
-            if (prev_log_index >= raft_state.log.get_size()) {
-                log_match = false;
-            } else if (raft_state.log.get(prev_log_index).term != prev_log_term) {
-                log_match = false;
+        // Check prevLogIndex and prevLogTerm match
+        boolean logMatch = true;
+        if (prevLogIndex >= 0) {
+            if (prevLogIndex >= raftState.log.getSize()) {
+                logMatch = false;
+            } else if (raftState.log.get(prevLogIndex).term != prevLogTerm) {
+                logMatch = false;
             }
         }
 
-        if (log_match) {
+        if (logMatch) {
             // commands are in format:
             // [ClientCommand <insert command>,ClientCommand <insert command>,...]
-            if (message_parts.length >= 7 && !message_parts[6].equals("")) {
-                String commands = message_parts[6];
+            if (messageParts.length >= 7 && !messageParts[6].equals("")) {
+                String commands = messageParts[6];
                 String[] split = commands.substring(1,commands.length() - 1)
                                          .split(",");
 
-                raft_state.log.clear_to(prev_log_index);
+                raftState.log.clearTo(prevLogIndex);
                 for (String cmd : split)
-                    raft_state.log.append_entry(cmd, leader_term);
+                    raftState.log.appendEntry(cmd, leaderTerm);
             }
 
             // commit upto leadercommit
-            raft_state.log.commit_entries(leader_commit);
+            raftState.log.commitEntries(leaderCommit);
         }
 
-        send_to_node(
-            raft_state.leader,
-            "AppendEntriesReply " + raft_state.term  + " "
-                                  + raft_state.id + " " 
-                                  + log_match + " " 
-                                  + raft_state.log.get_last_idx()
+        sendToNode(
+            raftState.leader,
+            "AppendEntriesReply " + raftState.term  + " "
+                                  + raftState.id + " " 
+                                  + logMatch + " " 
+                                  + raftState.log.getLastIdx()
         );
         return true;
     }
 
-    public void hand_to_leader(String message) {
-        if (raft_state.leader != null) {
-            send_to_node(raft_state.leader, message);
+    public void handToLeader(String message) {
+        if (raftState.leader != null) {
+            sendToNode(raftState.leader, message);
         } else {
             // No known leader, could buffer the message or ignore
         }
